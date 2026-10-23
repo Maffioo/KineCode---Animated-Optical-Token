@@ -3,6 +3,8 @@ name: Release & Publish to npm
 on:
   push:
     branches: [main]
+    paths:
+      - 'packages/kinecode/**'
   workflow_dispatch:
     inputs:
       bump:

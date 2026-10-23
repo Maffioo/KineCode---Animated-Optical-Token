@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-10-23
+
+### Security
+- **Production Key Management & Zero-Trust Client Architecture Documentation**:
+  - Added explicit security warnings in [SECURITY.md](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/SECURITY.md), [README.md](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/README.md), and [packages/kinecode/README.md](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/packages/kinecode/README.md) detailing why symmetric `secretKey` values must never be published in client-side HTML or user-accessible scripts in production.
+  - Documented the **Zero-Trust Client Scanner** model: attendee scanners (`<kine-scanner>`, mobile app) omit `secretKey`, decode optical frames without holding keys, and submit signed payloads to the backend for verification.
+  - Documented production generator display deployment options: Authenticated Presenter Dashboard, Server-Assisted Token Streaming (WebSocket / SSE), and Asymmetric Ed25519 signing.
+  - Added copy-paste backend verification pattern for Express/Node.js utilizing `verifySignedUrl()`.
+  - Added a visual security notice in the web QR Builder (`web/index.html`) regarding prototyping vs. production key handling.
+
 ## [0.1.0] - 2026-10-23
 
 ### Added
@@ -21,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **1:1 HTML Attributes & JS Constructor Options Parity (`Generator.ts`, `Scanner.ts`, `KineScannerElement.ts`)**:
   - Unified `<kine-code>` and `new Generator(options)` (`url`, `frames`, `fps`, `maxAge`, `actionMode`, `rotateEveryCycle`, `sessionId`, `secretKey`, `size`) as well as `<kine-scanner>` and `new Scanner(options)` (`secretKey`, `maxAge`, `maxCaptureMs`, `webhookUrl`, `autoRedirect`) with full backwards compatibility for legacy aliases.
 - **Automated CI/CD & Auto-Publish Workflows (`.github/workflows/ci.yml`, `.github/workflows/release.yml`)**:
-  - Added GitHub Actions workflows for automated testing on every push/PR and automatic SemVer version bumping (`fix:` / `feat:` / `BREAKING CHANGE`), GitHub Release creation, and `npm publish` on push to `main`.
+  - Added GitHub Actions workflows for automated testing on every push/PR and automatic SemVer version bumping (`fix:` / `feat:` / `BREAKING CHANGE`), GitHub Release creation, and `npm publish` on push to `main` when `packages/kinecode/**` changes.
 - **Synchronous Pure-TS SHA-256 & HMAC-SHA256 (`crypto.ts`, `Generator.ts`)**:
   - Added `sha256Sync`, `computeTruncatedHmacSync`, and `refreshPayloadSync` so `<kine-code>` and `Generator` render frames synchronously on frame 0 and work across both HTTP LAN IPs and HTTPS contexts without `crypto.subtle` restrictions.
 - **Zero-Settings Auto-Detect Frame Count (`Scanner.ts`, `mobile/App.tsx`)**:

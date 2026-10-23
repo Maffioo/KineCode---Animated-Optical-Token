@@ -93,8 +93,16 @@ Both `<kine-code>` (HTML Web Component) and `new Generator(options)` (JavaScript
 | `actionMode` | `'redirect' \| 'webhook' \| 'both'` | `'redirect'` | What the scanner does after unlocking all $N$ frames (open Signed URL, `POST` JSON to webhook, or both). |
 | `rotateEveryCycle` | `boolean` | `true` | Generates a new XOR `cycleNonce` and signature after each cycle pass so past photos are useless. |
 | `sessionId` | `string \| number` | `'0x1A2B3C4D'` | 32-bit room, lecture, or event identifier (e.g. `'0xCAFE1234'` or `3405697588`). |
-| `secretKey` | `string \| Uint8Array` | Random 32B | 64-character hex secret key (32 bytes) used to sign the payload via HMAC-SHA256. |
+| `secretKey` | `string \| Uint8Array` | Random 32B | 64-character hex secret key (32 bytes) used to sign the payload via HMAC-SHA256. <br/>⚠️ **Testing/prototyping only when declared in client HTML/JS.** In production, secret keys must never be exposed to public clients. See [Production Security Architecture](#part-3-production-security--backend-verification). |
 | `size` | `number` | `600` | Display width/height in pixels. |
+
+> [!WARNING]
+> **Production Security: Never Expose `secretKey` in Public Client Code**
+> In the quick-start snippets below, `secretKey` is shown directly in HTML for immediate local testing without needing a backend. In real production deployments:
+> 1. **Zero-Trust Scanner:** The client `<kine-scanner>` does **NOT** need `secretKey` (leave it omitted). It reads the token and passes it to your server.
+> 2. **Backend Verification:** Only the backend server holds the secret key in `process.env.KINECODE_SECRET_KEY` and validates incoming check-ins with `verifySignedUrl()`.
+> 3. **Protected Presenter Screen:** The projector screen displaying `<kine-code>` should run in an authenticated presenter session, or receive server-signed tokens via WebSocket/SSE.
+> See [Part 3: Production Security & Backend Verification](#part-3-production-security--backend-verification) for the complete architecture.
 
 #### Choosing `frames` vs `fps` (Scan Speed vs Security)
 
@@ -112,7 +120,7 @@ Both `<kine-code>` (HTML Web Component) and `new Generator(options)` (JavaScript
 #### A) Plain HTML / Vanilla JS
 
 ```html
-<!-- Option 1: Declarative Web Component -->
+<!-- Option 1: Declarative Web Component (Presenter / Projector Screen) -->
 <script type="module" src="https://cdn.jsdelivr.net/npm/kinecode/dist/kinecode.js"></script>
 
 <kine-code
@@ -123,6 +131,7 @@ Both `<kine-code>` (HTML Web Component) and `new Generator(options)` (JavaScript
   actionMode="redirect"
   rotateEveryCycle="true"
   sessionId="0xCAFE1234"
+  <!-- Optional for local testing: in production omit or inject in authenticated presenter session -->
   secretKey="0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
   size="500">
 </kine-code>
@@ -279,7 +288,7 @@ export class AttendanceQrComponent {}
 
 | Option / Attribute (`camelCase`) | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `secretKey` | `string \| Uint8Array` | `undefined` | Optional 32-byte hex key to verify the HMAC signature locally on the client. |
+| `secretKey` | `string \| Uint8Array` | `undefined` | Optional 32-byte hex key for client-side local verification. In production, leave `undefined` (Zero-Trust Scanner): send the scanned token to your server for backend verification. |
 | `maxAge` | `number` | `6` | Maximum allowed token age in seconds before rejecting a recorded video. |
 | `maxCaptureMs` | `number` | Auto (~3000ms) | Maximum burst time in ms from the first locked frame to the $N$-th frame. |
 | `webhookUrl` | `string` | `undefined` | Optional override endpoint to `POST` verified scan results. |
@@ -400,34 +409,80 @@ function onQrCodeRead(rawQrString: string) {
 
 ---
 
-## Part 3: Post-Handshake & Server Verification
+## Part 3: Production Security & Backend Verification
 
-When all $N$ frames are captured, the scanner reconstructs the destination `url` and appends four cryptographic query parameters:
+### 3.1 Production Architecture (Zero-Trust Client Model)
+
+> [!IMPORTANT]
+> **Why `secretKey` must NEVER be exposed on end-user client devices:**
+> In HMAC-SHA256 (symmetric cryptography), the same key that verifies a token can also forge new tokens. If the `secretKey` were distributed to attendees' phones or embedded in public web pages, any user could open DevTools or decompile the app, extract the key, and forge attendance check-ins from home without physical presence.
+
+In a secure production deployment, keys are managed using a **Zero-Trust Client Architecture**:
+
+```text
+ ┌────────────────────────────────────────────────────────┐
+ │                   BACKEND SERVER                       │
+ │  • Stores KINECODE_SECRET_KEY in environment variables │
+ │  • Validates HMAC signature & freshness window         │
+ └──────────────┬─────────────────────────▲───────────────┘
+                │                         │
+     1. Token / Key Stream                │ 3. Check-In Request:
+        (WebSocket / SSE / Auth Kiosk)    │    Signed URL or JSON
+                │                         │    { sessionId, ts, sig }
+                ▼                         │
+     ┌─────────────────────┐      ┌───────┴───────────────┐
+     │  PRESENTER DISPLAY  │ 2.   │  ATTENDEE SMARTPHONE  │
+     │    (<kine-code>)    │ Opti-│   (<kine-scanner>)    │
+     │ • Classroom screen  │ cal  │ • ZERO-TRUST client   │
+     │ • Protected session │ Pass │ • NO secret key       │
+     └─────────────────────┘      └───────────────────────┘
+```
+
+#### Key Rules for Production:
+1. **Attendee Scanners (`<kine-scanner>`, Mobile App):**
+   - **Do NOT configure `secretKey` on the scanner.** Leave it `undefined`.
+   - The scanner's job is solely optical reception: it reconstructs the signed URL and tokens (`sessionId`, `timestamp`, `cycleNonce`, `signature`) and passes them to your server.
+2. **Presenter Screen (`<kine-code>`):**
+   - **Option A (Authenticated Dashboard):** Render `<kine-code>` on a private projector screen inside a password-protected teacher/admin portal or dedicated hardware terminal (kiosk). Students cannot view the HTML source of the projector screen.
+   - **Option B (Server-Assisted Token Streaming):** Have the backend sign the ephemeral payloads and stream them to the presenter screen via WebSocket or Server-Sent Events (SSE). The display frontend never holds the master secret key.
+   - **Option C (Asymmetric Ed25519 Signing):** Sign tokens using an Ed25519 private key on your server. Any client can hold the public key to verify authenticity without the ability to forge tokens.
+
+---
+
+### 3.2 1-Line Backend Verification (`verifySignedUrl`)
+
+When all $N$ frames are captured by the attendee's phone, the scanner reconstructs the destination `url` and appends four cryptographic query parameters:
 
 ```text
 https://presenze.unimi.it/checkin?aula=302&kc_session=0xCAFE1234&kc_ts=1729681204&kc_nonce=A7&kc_sig=a9f14bc32e7810
 ```
 
-### 1-Line Backend Verification (`verifySignedUrl`)
-
-To verify on your Node.js / Express / Next.js / Supabase backend that a request came from a live KineCode scan (and wasn't copy-pasted minutes later), call **`verifySignedUrl`**:
+To verify on your Node.js / Express / Next.js / Supabase backend that the check-in is authentic and happened live during the current window, call **`verifySignedUrl`**:
 
 ```typescript
 import { verifySignedUrl } from 'kinecode';
 
+// The secret key is stored securely in backend environment variables
 const SECRET_KEY = process.env.KINECODE_SECRET_KEY!;
 
-app.get('/checkin', (req, res) => {
+app.get('/checkin', async (req, res) => {
   const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-  // Verifies HMAC-SHA256 signature AND checks that kc_ts is within maxAge seconds
-  const verification = verifySignedUrl(fullUrl, SECRET_KEY, { maxAge: 10 });
+  // 1-line check: validates HMAC-SHA256 signature AND verifies timestamp freshness
+  const verification = verifySignedUrl(fullUrl, SECRET_KEY, { maxAge: 6 });
 
   if (!verification.valid) {
     return res.status(403).json({ error: verification.error });
   }
 
-  // Confirmed live physical presence!
+  // Cryptographically authentic, live physical presence!
+  // Register attendance for the authenticated user session:
+  await db.recordAttendance({
+    userId: req.user.id,
+    sessionId: verification.sessionId,
+    timestamp: verification.timestamp
+  });
+
   return res.json({
     success: true,
     sessionId: verification.sessionId,

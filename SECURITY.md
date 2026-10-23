@@ -24,10 +24,36 @@ KineCode is designed specifically as an **Optical Proof-of-Presence (PoP)** mech
 
 ### 3. Cryptographic Authenticity
 - Tokens are signed at the source using **Ed25519** (`@noble/ed25519`) or high-performance **HMAC-SHA256** (Web Crypto API `crypto.subtle`).
-- The 16-byte payload includes an explicit 7-byte cryptographic signature truncated according to optical bandwidth budget constraints, verified locally using the pre-shared public key or shared secret.
+- The 16-byte payload includes an explicit 7-byte cryptographic signature truncated according to optical bandwidth budget constraints, verified locally using the pre-shared public key or verified server-side using the shared secret.
 - An 8-bit Cyclic Redundancy Check (`CRC-8`) validates raw optical transmission integrity before cryptographic signature evaluation.
 
-### 4. Physical Scope Limitations
+### 4. Key Management & Production Threat Architecture
+
+> [!WARNING]
+> **Never embed symmetric keys (`secretKey`) in public client-side code.**
+> In quick-start examples, `secretKey` is shown directly in HTML/JS for immediate local testing without needing a backend server. In production, placing a symmetric key in client HTML/JS allows anyone with browser DevTools to read the key and forge tokens offline.
+
+To deploy KineCode securely in production, follow these principles:
+
+#### A. Zero-Trust Scanner Clients (No Secrets on User Devices)
+- End-user scanner devices (`<kine-scanner>`, mobile apps) are untrusted clients and **must NOT contain the `secretKey`**.
+- Leave `secretKey` omitted (`undefined`) in `<kine-scanner>`.
+- The scanner captures the optical frames, decodes the signed payload (`sessionId`, `timestamp`, `cycleNonce`, `signature`), and either redirects or submits (`POST`) the payload to your backend server along with the user's authenticated session cookie or JWT.
+
+#### B. Server-Side Verification
+- The backend server stores `KINECODE_SECRET_KEY` in environment variables or a secret vault.
+- When the client submits the scan result, the backend invokes `verifySignedUrl(url, secretKey)` or `verifyTruncatedHmac(header, secretKey, signature)`.
+- The server checks:
+  1. **Signature authenticity:** Matches the backend's secret key.
+  2. **Timestamp freshness:** Rejects timestamps older than `maxAgeSec` (default 6 seconds).
+  3. **Replay prevention:** Ensures the specific `(sessionId, timestamp, cycleNonce)` combination has not already been redeemed by another request or is within an active live window.
+
+#### C. Presenter / Generator Deployment Options
+- **Authenticated Presenter Dashboard:** The `<kine-code>` generator runs on a projector screen inside a password-protected presenter/teacher dashboard or a dedicated hardware kiosk (e.g. Raspberry Pi display). Attendees/students never have access to this page's source code.
+- **Server-Side Token Streaming (WebSocket / SSE):** The backend signs ephemeral payloads and streams them to the projector display. The presenter client only displays what the server pushes, never holding a master secret.
+- **Asymmetric Signing (Ed25519):** Tokens are signed using an Ed25519 private key held on the server or presenter device. Scanners or third-party verifiers only need the **public key**, which is cryptographically impossible to use for forging signatures.
+
+### 5. Physical Scope Limitations
 - Optical verification proves that a camera-equipped device was pointed at an active projector screen displaying the synchronized animated token during the verification window.
 - It does not authenticate user biometric identity; pairing with an authenticated student/employee session ID or user credential payload is recommended.
 
