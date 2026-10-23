@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KineCode — Optical Proof-of-Presence</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <style>
+      :root {
+        --bg-primary: #0a0a0c;
+        --bg-card: #13141a;
+        --bg-elevated: #1a1c24;
+        --border-color: #272a38;
+        --text-primary: #f0f2f5;
+        --text-secondary: #8e94a5;
+        --accent-cyan: #00ffff;
+        --accent-magenta: #ff00ff;
+        --accent-yellow: #ffff00;
+        --accent-green: #00ff88;
+        --accent-red: #ff3366;
+        --font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      header {
+        background: rgba(19, 20, 26, 0.85);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-color);
+        padding: 14px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .logo-group {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        display: block;
+        filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.45));
+      }
+
+      .logo-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        background: linear-gradient(135deg, #ffffff 40%, var(--accent-cyan) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .logo-badge {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        background: rgba(0, 255, 255, 0.12);
+        color: var(--accent-cyan);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 999px;
+      }
+
+      .nav-tabs {
+        display: flex;
+        background: var(--bg-primary);
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+      }
+
+      .tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 8px 18px;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .tab-btn:hover {
+        color: var(--text-primary);
+      }
+
+      .tab-btn.active {
+        background: var(--bg-card);
+        color: var(--accent-cyan);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      }
+
+      main {
+        flex: 1;
+        padding: 24px;
+        max-width: 1300px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .view-panel {
+        display: none;
+      }
+
+      .view-panel.active {
+        display: block;
+      }
+
+      /* Grid layout for split/dual view */
+      .split-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      @media (max-width: 900px) {
+        .split-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .card-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .canvas-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: #000000;
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      canvas {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .camera-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .camera-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .controls-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+        align-items: center;
+      }
+
+      .btn {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+      }
+
+      .btn:hover {
+        background: #252834;
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+      }
+
+      .btn-primary {
+        background: rgba(0, 255, 255, 0.15);
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-cyan);
+        color: #000000;
+        box-shadow: 0 0 16px rgba(0, 255, 255, 0.5);
+      }
+
+      .btn-success {
+        background: rgba(0, 255, 136, 0.15);
+        border-color: var(--accent-green);
+        color: var(--accent-green);
+      }
+
+      /* Progress indicators */
+      .progress-container {
+        margin-top: 16px;
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+        color: var(--text-secondary);
+      }
+
+      .progress-slots {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 6px;
+      }
+
+      .slot-box {
+        height: 28px;
+        border-radius: 4px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
+        color: var(--text-secondary);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .slot-box.locked {
+        background: rgba(0, 255, 136, 0.2);
+        border-color: var(--accent-green);
+        color: var(--accent-green);
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+      }
+
+      .telemetry-table {
+        width: 100%;
+        margin-top: 16px;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        border-collapse: collapse;
+      }
+
+      .telemetry-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .telemetry-table td:first-child {
+        color: var(--text-secondary);
+        width: 40%;
+      }
+
+      .status-pill {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .status-pill.success {
+        background: rgba(0, 255, 136, 0.15);
+        color: var(--accent-green);
+        border: 1px solid var(--accent-green);
+      }
+
+      .status-pill.warning {
+        background: rgba(255, 255, 0, 0.15);
+        color: var(--accent-yellow);
+        border: 1px solid var(--accent-yellow);
+      }
+
+      .status-pill.danger {
+        background: rgba(255, 51, 102, 0.15);
+        color: var(--accent-red);
+        border: 1px solid var(--accent-red);
+      }
+
+      /* Fullscreen Projector Mode */
+      .fullscreen-target:fullscreen {
+        width: 100vw;
+        height: 100vh;
+        background: #000000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .fullscreen-target:fullscreen canvas {
+        width: 90vh;
+        height: 90vh;
+      }
+
+      .form-group {
+        margin-bottom: 14px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      .form-input {
+        width: 100%;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        padding: 8px 12px;
+        border-radius: 6px;
+        color: var(--text-primary);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: var(--accent-cyan);
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .chip-group {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+      }
+
+      .chip-btn {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 10px 8px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s ease;
+      }
+
+      .chip-btn:hover {
+        border-color: var(--accent-cyan);
+        color: var(--text-primary);
+      }
+
+      .chip-btn.active {
+        background: rgba(0, 255, 255, 0.14);
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+        box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+      }
+
+      .code-block {
+        background: #08090d;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 14px;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: #d6deeb;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        line-height: 1.5;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 14px;
+      }
+
+      /* Web Scanner Verification Popup */
+      .scan-popup-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.82);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        padding: 24px;
+      }
+
+      .scan-popup-card {
+        width: 100%;
+        max-width: 340px;
+        background: #13141A;
+        border: 1px solid #272A38;
+        border-radius: 20px;
+        padding: 28px 24px;
+        text-align: center;
+      }
+
+      .scan-popup-check {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(0, 255, 136, 0.12);
+        border: 1.5px solid #00FF88;
+        color: #00FF88;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px auto;
+      }
+
+      .scan-popup-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 16px;
+      }
+
+      .scan-popup-domain-box {
+        background: #1A1C24;
+        border: 1px solid #292D3D;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 22px;
+      }
+
+      .scan-popup-domain-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #8E94A5;
+        margin-bottom: 4px;
+      }
+
+      .scan-popup-domain-val {
+        font-size: 16px;
+        font-weight: 700;
+        color: #00FF88;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .scan-popup-primary-btn {
+        width: 100%;
+        background: #00FF88;
+        color: #0A0A0C;
+        border: none;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        margin-bottom: 10px;
+      }
+
+      .scan-popup-secondary-btn {
+        width: 100%;
+        background: #1A1C24;
+        color: #FFFFFF;
+        border: 1px solid #292D3D;
+        padding: 13px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo-group">
+        <img src="/logo-white.png" alt="KineCode Logo" class="logo-icon" />
+        <div class="logo-title">KineCode</div>
+        <div class="logo-badge">Proof-of-Presence</div>
+      </div>
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="split-view">Dual Testbench</button>
+        <button class="tab-btn" data-tab="builder-view">QR Builder</button>
+        <button class="tab-btn" data-tab="scanner-view">Mobile Scanner</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- TAB 1: DUAL TESTBENCH (Generator + Live Code Inspector) -->
+      <section id="split-view" class="view-panel active">
+        <div class="split-grid">
+          <!-- Generator Column -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Active KineCode (Configured by Builder)</div>
+              <div class="controls-bar" style="margin: 0">
+                <button id="dual-reroll-btn" class="btn">New Cycle</button>
+                <button id="dual-fs-btn" class="btn btn-primary">Fullscreen</button>
+              </div>
+            </div>
+
+            <div id="dual-gen-container" class="canvas-container fullscreen-target">
+              <canvas id="dual-gen-canvas" width="600" height="600"></canvas>
+            </div>
+
+            <div class="controls-bar" style="justify-content: space-between">
+              <span id="dual-gen-badge" class="logo-badge">Rolling XOR • 4 Frames • 4 FPS</span>
+              <button id="dual-edit-builder-btn" class="btn">Edit in Builder</button>
+            </div>
+          </div>
+
+          <!-- Live Code Inspector Column -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Live Code Inspector</div>
+              <div id="insp-nonce-badge" class="status-pill success">Nonce: 0x00</div>
+            </div>
+
+            <!-- Active Frame Indicator -->
+            <div class="progress-container" style="margin-top: 0; margin-bottom: 16px">
+              <div class="progress-header">
+                <span>Currently Transmitted Cyclic Frame</span>
+                <span id="insp-frame-text" style="color: var(--accent-cyan); font-weight: 600">Frame 1 / 4</span>
+              </div>
+              <div class="progress-slots" id="insp-progress-slots" style="grid-template-columns: repeat(4, 1fr)">
+                <div class="slot-box locked" id="insp-slot-0">0</div>
+                <div class="slot-box" id="insp-slot-1">1</div>
+                <div class="slot-box" id="insp-slot-2">2</div>
+                <div class="slot-box" id="insp-slot-3">3</div>
+              </div>
+            </div>
+
+            <!-- Real-time Code Inspection Table -->
+            <table class="telemetry-table">
+              <tbody>
+                <tr>
+                  <td>Destination / Webhook URL</td>
+                  <td id="insp-target-url" style="word-break: break-all; color: var(--text-primary)">-</td>
+                </tr>
+                <tr>
+                  <td>Post-Handshake Action</td>
+                  <td id="insp-action-mode">-</td>
+                </tr>
+                <tr>
+                  <td>Cyclic Frame Count</td>
+                  <td id="insp-total-frames">-</td>
+                </tr>
+                <tr>
+                  <td>Speed &amp; Cycle Duration</td>
+                  <td id="insp-fps-duration">-</td>
+                </tr>
+                <tr>
+                  <td>Token Expiration (Anti-Video)</td>
+                  <td id="insp-max-age">-</td>
+                </tr>
+                <tr>
+                  <td>Anti-Photo Reuse Rotation</td>
+                  <td id="insp-rotation-mode">-</td>
+                </tr>
+                <tr>
+                  <td>Session / Room ID</td>
+                  <td id="insp-session-id">-</td>
+                </tr>
+                <tr>
+                  <td>Current Frame QR Payload</td>
+                  <td id="insp-raw-qr" style="word-break: break-all; color: var(--accent-yellow)">-</td>
+                </tr>
+                <tr>
+                  <td>QR Matrix Size</td>
+                  <td id="insp-qr-size">-</td>
+                </tr>
+                <tr>
+                  <td>Cycle Timestamp &amp; Signature</td>
+                  <td id="insp-ts-sig">-</td>
+                </tr>
+                <tr>
+                  <td>Unlocked Signed URL</td>
+                  <td id="insp-signed-url" style="word-break: break-all; color: var(--accent-green)">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: NO-CODE VISUAL BUILDER -->
+      <section id="builder-view" class="view-panel">
+        <div class="split-grid">
+          <!-- Left: Interactive Configuration Selectors -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Configure Your KineCode</div>
+              <span class="logo-badge">No-Code Builder</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">1. Destination URL / Attendance Page / Webhook Endpoint</label>
+              <input
+                type="url"
+                id="bld-url"
+                class="form-input"
+                value="https://attendance.example.com/checkin?room=302"
+                placeholder="https://yoursite.com/checkin or https://api.yoursite.com/webhook"
+              />
+              <small style="color: var(--text-secondary); font-size: 0.74rem; display: block; margin-top: 4px">
+                This URL is fragmented and XOR-masked across frames: the scanner reconstructs it only after capturing all N live frames.
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">2. Cyclic Frame Count (Security Level vs Scan Speed)</label>
+              <div class="chip-group" id="bld-frames-group">
+                <button type="button" class="chip-btn active" data-frames="4">
+                  4 Frames<br><span class="frame-time-label" data-label="Fast" style="font-size:0.7rem;font-weight:400">~1.0s Fast</span>
+                </button>
+                <button type="button" class="chip-btn" data-frames="6">
+                  6 Frames<br><span class="frame-time-label" data-label="Balanced" style="font-size:0.7rem;font-weight:400">~1.5s Balanced</span>
+                </button>
+                <button type="button" class="chip-btn" data-frames="8">
+                  8 Frames<br><span class="frame-time-label" data-label="Secure" style="font-size:0.7rem;font-weight:400">~2.0s Secure</span>
+                </button>
+                <button type="button" class="chip-btn" data-frames="12">
+                  12 Frames<br><span class="frame-time-label" data-label="Max" style="font-size:0.7rem;font-weight:400">~3.0s Max</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">3. Post-Handshake Action Mode</label>
+              <select id="bld-action-mode" class="form-input">
+                <option value="redirect" selected>Open Signed URL (Redirect to attendance page / login form)</option>
+                <option value="webhook">Send background POST Webhook (n8n, Make, API Server)</option>
+                <option value="both">Both (Send POST Webhook + Open Signed URL)</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">4. Frame Rate (FPS)</label>
+                <select id="bld-fps" class="form-input">
+                  <option value="2">2 FPS (500ms/frame)</option>
+                  <option value="4" selected>4 FPS (250ms - Recommended)</option>
+                  <option value="6">6 FPS (166ms - Fast)</option>
+                  <option value="8">8 FPS (125ms - Pro)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">5. Expiration Window (Anti-Video)</label>
+                <select id="bld-max-age" class="form-input">
+                  <option value="4">4 Seconds (Ultra-Strict)</option>
+                  <option value="6" selected>6 Seconds (Recommended)</option>
+                  <option value="10">10 Seconds (Tolerant)</option>
+                  <option value="20">20 Seconds</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <div style="font-size: 0.84rem; font-weight: 600">Regenerate New Frames Every Cycle (Anti-Photo Reuse)</div>
+                <div style="font-size: 0.74rem; color: var(--text-secondary)">
+                  Rotates XOR Nonce and signature every cycle so past frames cannot be reused.
+                </div>
+              </div>
+              <input type="checkbox" id="bld-rotate-cycle" checked style="width: 18px; height: 18px; accent-color: var(--accent-cyan)" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Session / Room ID</label>
+              <input type="text" id="bld-session-id" class="form-input" value="0xCAFE1234" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Cryptographic Secret Key (HMAC / Ed25519 Hex)</label>
+              <div style="display: flex; gap: 8px">
+                <input
+                  type="text"
+                  id="bld-secret-key"
+                  class="form-input"
+                  value="0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+                />
+                <button type="button" id="bld-gen-key-btn" class="btn">Generate</button>
+              </div>
+            </div>
+
+            <button type="button" id="bld-apply-testbench-btn" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px">
+              Open in Dual Testbench (Scan &amp; Inspect)
+            </button>
+          </div>
+
+          <!-- Right: Live Preview & Embed Code Output -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Live Preview &amp; Embed Code</div>
+              <span id="bld-live-meta" class="status-pill success">Cycle Nonce: 0x00</span>
+            </div>
+
+            <div class="canvas-container" style="max-width: 320px; margin: 0 auto 16px auto">
+              <canvas id="bld-preview-canvas" width="500" height="500"></canvas>
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px">
+                <label class="form-label" style="margin: 0">1. HTML Embed Snippet (&lt;kine-code&gt;)</label>
+                <button type="button" id="bld-copy-html-btn" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.76rem">
+                  Copy HTML
+                </button>
+              </div>
+              <pre id="bld-code-html" class="code-block"></pre>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0">
+              <label class="form-label">2. Scanner Output After Handshake (Signed URL / Webhook JSON)</label>
+              <pre id="bld-code-output" class="code-block" style="color: var(--accent-green)"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: STANDALONE SCANNER VIEW (Mobile Camera) -->
+      <section id="scanner-view" class="view-panel">
+        <div class="card" style="max-width: 600px; margin: 0 auto">
+          <div class="card-header">
+            <div class="card-title">Mobile Camera Scanner</div>
+            <button id="cam-start-btn" class="btn btn-primary">Start Camera</button>
+          </div>
+          <div class="canvas-container" style="aspect-ratio: 4 / 3">
+            <video id="cam-video" class="camera-video" playsinline muted></video>
+            <canvas id="cam-overlay" class="camera-overlay" width="640" height="480"></canvas>
+          </div>
+          <div class="progress-container">
+            <div class="progress-header">
+              <span>Capturing Token...</span>
+              <span id="cam-progress-text">0 / 4</span>
+            </div>
+            <div class="progress-slots" id="cam-progress-slots" style="grid-template-columns: repeat(4, 1fr)">
+              <div class="slot-box" id="cam-slot-0">0</div>
+              <div class="slot-box" id="cam-slot-1">1</div>
+              <div class="slot-box" id="cam-slot-2">2</div>
+              <div class="slot-box" id="cam-slot-3">3</div>
+            </div>
+          </div>
+          <div id="cam-result-alert" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none"></div>
+        </div>
+
+        <!-- Clean Distribution-Ready Verification Popup -->
+        <div id="cam-popup-overlay" class="scan-popup-overlay">
+          <div class="scan-popup-card">
+            <div class="scan-popup-check">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="scan-popup-title">Presence Verified</div>
+            <div class="scan-popup-domain-box">
+              <div class="scan-popup-domain-label">WEBSITE</div>
+              <div id="cam-popup-domain" class="scan-popup-domain-val">-</div>
+            </div>
+            <a id="cam-popup-open-btn" class="scan-popup-primary-btn" href="#" target="_blank" rel="noopener noreferrer">
+              <span>Open Link</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+            </a>
+            <button id="cam-popup-new-scan-btn" class="scan-popup-secondary-btn">New Scan</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

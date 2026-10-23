@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>KineCode Scanner</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body, html {
+        width: 100%;
+        height: 100%;
+        background-color: #000000;
+        color: #FFFFFF;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        overflow: hidden;
+      }
+
+      #scanner-root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Top minimal brand bar */
+      .top-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        background: linear-gradient(180deg, rgba(10, 10, 12, 0.8) 0%, transparent 100%);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .brand-logo {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        display: block;
+        filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.6));
+      }
+
+      .brand-title {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #FFFFFF;
+      }
+
+      .brand-tag {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 2px 6px;
+        background: rgba(0, 255, 255, 0.15);
+        color: #00FFFF;
+        border-radius: 4px;
+      }
+
+      /* Fullscreen Video + Overlay */
+      .video-wrapper {
+        position: relative;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000000;
+      }
+
+      video#camera-feed {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      canvas#reticle-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      /* Bottom Status HUD */
+      .bottom-hud {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 20px 20px 34px 20px;
+        background: linear-gradient(0deg, rgba(10, 10, 12, 0.95) 0%, rgba(10, 10, 12, 0.6) 80%, transparent 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .progress-label-row {
+        width: 100%;
+        max-width: 400px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        color: #8E94A5;
+      }
+
+      .progress-percent {
+        font-weight: 700;
+        color: #00FF88;
+      }
+
+      /* Slot boxes */
+      .slot-indicators {
+        width: 100%;
+        max-width: 400px;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 6px;
+      }
+
+      .slot-indicator {
+        height: 28px;
+        background: rgba(26, 28, 36, 0.8);
+        border: 1px solid #272A38;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-family: monospace;
+        color: #656A7C;
+        transition: all 0.2s ease;
+      }
+
+      .slot-indicator.locked {
+        background: rgba(0, 255, 136, 0.25);
+        border-color: #00FF88;
+        color: #00FF88;
+        box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+      }
+
+      .hud-hint {
+        font-size: 13px;
+        color: #A0A5B5;
+        text-align: center;
+      }
+
+      /* Start Camera Button (if autoplay blocked or initial state) */
+      .action-btn {
+        background: #00FF88;
+        color: #0A0A0C;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      /* Verified Modal / Overlay */
+      #success-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(10px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 24px;
+      }
+
+      .success-card {
+        width: 100%;
+        max-width: 340px;
+        background: #13141A;
+        border: 1px solid #272A38;
+        border-radius: 20px;
+        padding: 28px 24px;
+        text-align: center;
+      }
+
+      .success-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(0, 255, 136, 0.12);
+        border: 1.5px solid #00FF88;
+        color: #00FF88;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px auto;
+      }
+
+      .success-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 16px;
+      }
+
+      .domain-badge {
+        background: #1A1C24;
+        border: 1px solid #292D3D;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-bottom: 22px;
+      }
+
+      .domain-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #8E94A5;
+        margin-bottom: 4px;
+      }
+
+      .domain-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #00FF88;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .btn-open-link {
+        width: 100%;
+        background: #00FF88;
+        color: #0A0A0C;
+        border: none;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        margin-bottom: 10px;
+      }
+
+      .btn-restart {
+        width: 100%;
+        background: #1A1C24;
+        color: #FFFFFF;
+        border: 1px solid #292D3D;
+        padding: 13px 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="scanner-root">
+      <!-- Minimal Header -->
+      <div class="top-bar">
+        <div class="brand">
+          <img src="/logo-white.png" alt="KineCode Logo" class="brand-logo" />
+          <span class="brand-title">KineCode</span>
+          <span class="brand-tag">SCANNER</span>
+        </div>
+      </div>
+
+      <!-- Camera Feed & Overlay Canvas -->
+      <div class="video-wrapper">
+        <video id="camera-feed" playsinline muted autoplay></video>
+        <canvas id="reticle-overlay"></canvas>
+      </div>
+
+      <!-- Bottom HUD with frame indicators -->
+      <div class="bottom-hud">
+        <button id="start-cam-btn" class="action-btn" style="display: none;">Start Camera</button>
+        <div class="progress-label-row">
+          <span>Capturing Token</span>
+          <span id="progress-val" class="progress-percent">0 / 8 (0%)</span>
+        </div>
+        <div class="slot-indicators">
+          <div class="slot-indicator" id="slot-0">0</div>
+          <div class="slot-indicator" id="slot-1">1</div>
+          <div class="slot-indicator" id="slot-2">2</div>
+          <div class="slot-indicator" id="slot-3">3</div>
+          <div class="slot-indicator" id="slot-4">4</div>
+          <div class="slot-indicator" id="slot-5">5</div>
+          <div class="slot-indicator" id="slot-6">6</div>
+          <div class="slot-indicator" id="slot-7">7</div>
+        </div>
+        <div id="hud-hint" class="hud-hint">Point camera at the KineCode</div>
+      </div>
+
+      <!-- Success Modal (Zero Emojis, Domain Only) -->
+      <div id="success-modal">
+        <div class="success-card">
+          <div class="success-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h2 class="success-title">Presence Verified</h2>
+          <div class="domain-badge">
+            <div class="domain-label">WEBSITE</div>
+            <div class="domain-value" id="success-domain">-</div>
+          </div>
+          <a id="btn-open-link" class="btn-open-link" href="#" target="_blank" rel="noopener noreferrer">
+            <span>Open Link</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+          </a>
+          <button id="btn-done" class="btn-restart">New Scan</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/scanner-page.ts"></script>
+  </body>
+</html>

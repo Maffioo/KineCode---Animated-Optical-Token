@@ -1,0 +1,69 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic & coverage directories
+coverage
+*.lcov
+.nyc_output
+
+# Dependency directories & package archives
+node_modules/
+**/node_modules/
+*.tgz
+
+# Build artifacts
+dist/
+dist-demo/
+dist-ssr/
+packages/*/dist/
+web/dist/
+*.tsbuildinfo
+
+# Environment and local settings
+.env
+.env.*
+!.env.example
+*.local
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# AI / Agent local configurations & temporary files
+.agents/
+AGENTS.md
+.gemini/
+.cursor/
+.claude/
+.windsurf/
+.system_generated/
+graphify-out/
+
+# Mobile / Expo (Monorepo)
+.expo/
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
+mobile/expo-env.d.ts
+mobile/.kotlin/
+mobile/*.orig.*
+mobile/*.jks
+mobile/*.p8
+mobile/*.p12
+mobile/*.key
+mobile/*.mobileprovision
+mobile/.metro-health-check*
+mobile/ios/
+mobile/android/

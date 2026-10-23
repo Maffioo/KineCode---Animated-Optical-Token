@@ -1,0 +1,53 @@
+{
+  "name": "kinecode",
+  "version": "0.1.0",
+  "description": "Dynamic multi-frame animated QR code generator & scanner for anti-photo Proof-of-Presence",
+  "type": "module",
+  "main": "./dist/kinecode.umd.cjs",
+  "module": "./dist/kinecode.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/kinecode.js",
+      "require": "./dist/kinecode.umd.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dynamic-qr",
+    "animated-qr",
+    "optical-token",
+    "proof-of-presence",
+    "attendance",
+    "anti-photo-qr",
+    "ed25519",
+    "hmac",
+    "web-components",
+    "qrcode"
+  ],
+  "author": "KineCode Contributors",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && vite build && tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm test && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^2.2.3",
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/qrcode": "^1.5.6",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.7"
+  }
+}
