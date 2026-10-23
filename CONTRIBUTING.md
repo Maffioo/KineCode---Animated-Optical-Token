@@ -46,6 +46,15 @@ Thank you for your interest in contributing to KineCode!
    npm run mobile:start
    ```
 
+## CI & Automated Releases
+
+Two GitHub Actions workflows live in `.github/workflows/`:
+1. **[`ci.yml`](.github/workflows/ci.yml):** runs `npm test` and `npm run build` for `packages/kinecode` and `web` on every push and pull request.
+2. **[`release.yml`](.github/workflows/release.yml):** on every push to `main`:
+   - bumps `packages/kinecode/package.json` (`minor` if the commit starts with `feat:`, otherwise `patch`);
+   - pushes the Git tag and creates a GitHub Release with auto-generated notes;
+   - publishes `packages/kinecode` to npm if the `NPM_TOKEN` repository secret is set (*Settings → Secrets and variables → Actions*).
+
 ## Engineering Directives
 
 - **Zero Heavy Dependencies:** Core logic in `packages/kinecode` must remain lightweight. Do not add heavy computer vision or runtime libraries.

@@ -137,11 +137,8 @@ export class KineScannerElement extends SafeHTMLElement {
       }
     });
 
-    if (
-      this.hasAttribute('autoStart') ||
-      this.hasAttribute('autostart') ||
-      this.hasAttribute('auto-start')
-    ) {
+    const autoStartAttr = this.getAttr('autoStart', 'auto-start');
+    if (autoStartAttr !== null && autoStartAttr !== 'false') {
       try {
         await this.scanner.startCamera();
       } catch (_e) {

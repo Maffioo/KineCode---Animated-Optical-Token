@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **README rewrite** (root and `packages/kinecode`): added Quick start, How it works, Security model & limitations, webhook payload format, browser requirements (HTTPS), Development section, and the missing options (`skin`, `centerLogoUrl`, `showAntiStream`). Collapsed the Vue/Angular examples and moved the CI/release docs to `CONTRIBUTING.md`.
+
+### Fixed
+- **Docs:** removed the incorrect claims that truncated Ed25519 signatures can be verified with a public key and that the system is "zero-backend"; documented that `maxAge`, `actionMode`, and the base URL are part of the signed message; corrected the `frames × fps` table against the default burst window (`max(3000, N × 450)` ms); fixed a broken anchor, an invalid HTML snippet, the per-component `sessionId` defaults, and the async signature of `generateKeyPair()`.
+- **`<kine-scanner>`:** `autoStart="false"` no longer starts the camera.
+
 ## [0.1.1] - 2026-10-23
 
 ### Security

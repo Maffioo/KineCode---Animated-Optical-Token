@@ -1,6 +1,4 @@
-# KineCode — Dynamic Multi-Frame Animated QR Code
-
-<div align="center">
+# KineCode
 
 <p align="center">
   <picture>
@@ -9,552 +7,415 @@
   </picture>
 </p>
 
+<p align="center">
+  <b>Animated, self-rotating QR codes for proof-of-presence check-ins.</b><br/>
+  A photo forwarded to a group chat stops working within seconds.
+</p>
+
+<div align="center">
+
 [![npm version](https://img.shields.io/npm/v/kinecode.svg?color=00FFFF)](https://www.npmjs.com/package/kinecode)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-3178C6?logo=typescript&logoColor=white)
-![Zero-Server](https://img.shields.io/badge/Architecture-Stateless%20%2F%20Zero--Backend-00FF66)
-![Cryptography](https://img.shields.io/badge/Crypto-HMAC--SHA256%20%2F%20Ed25519-FF00FF)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Tests](https://img.shields.io/badge/Tests-Vitest%20100%25%20Passing-00FF66)
 
-**Drop-in animated QR code generator & scanner that prevents photo sharing, video replays, and remote check-in spoofing.**  
-Split and XOR-mask any destination URL or webhook across $N$ cyclic QR frames (`4`, `6`, `8`, `12`) that regenerate every cycle.
-
-[Why KineCode?](#why-kinecode) • [Installation](#installation) • [Part 1: Generator Setup](#part-1-displaying-a-kinecode-generator) • [Part 2: Scanner Setup](#part-2-scanning--decoding-a-kinecode-scanner) • [Part 3: Server & Webhook Verification](#part-3-post-handshake--server-verification) • [Exported API Reference](#exported-functions--api-reference)
+[Why](#why-kinecode) • [Quick start](#quick-start) • [How it works](#how-it-works) • [Generator](#generator) • [Scanner](#scanner) • [Server verification](#server-verification) • [Security model](#security-model--limitations) • [API](#api-reference) • [Development](#development)
 
 </div>
+
+<!-- TODO: add an animated GIF of <kine-code> here and a link to the hosted web demo (web/). -->
 
 ---
 
 ## Why KineCode?
 
-Standard static QR codes used for **university attendance, event check-ins, classroom exams, and physical access** have two fatal flaws:
-1. **The WhatsApp Photo Exploit:** One attendee takes a photo of the projected QR code and forwards it to a group chat; 50 absent peers scan the photo from home.
-2. **The Link Copy-Paste Exploit:** A single static QR encodes a fixed URL in plain text that stays valid for the entire session.
+Static QR codes used for **lecture attendance, event check-ins, exams, and door access** have one fatal flaw: anyone can photograph the code and forward it. One student posts it in the class chat, and 50 students who aren't there check in from home.
 
-**KineCode** solves both problems without requiring a complex backend:
-- **Fragmented & XOR-Masked URL (`KC2` Protocol):** Your destination URL (`https://your-site.com/checkin`) is never encoded in a single QR frame. It is split across **$N$ cyclic frames** (`4`, `6`, `8`, or `12`) and XOR-masked with a rolling per-cycle nonce (`cycleNonce`). Taking a photo with a standard phone camera reveals nothing.
-- **Continuous Per-Cycle Rotation (`rotateEveryCycle`):** Every pass generates brand-new QR frames with a new XOR nonce and fresh cryptographic signature. Frames from a previous cycle cannot be combined with frames from a new cycle.
-- **Strict Burst & Freshness Enforcement:** The KineCode Scanner automatically detects how many frames the code requires (`Auto-Detect`), enforces a tight burst capture timer (preventing users from swiping through 4 photos in chat), and rejects recorded videos older than `maxAge` seconds (default `6s`).
+KineCode replaces the static code with a short **animated loop of N standard QR frames**:
 
-```
-┌─────────────────────────────────────────┐            ┌─────────────────────────────────────────┐
-│       HOST WEBSITE / PROJECTOR          │            │      ATTENDEE PHONE (APP / WEB APP)     │
-│      (<kine-code> / Generator)          │            │    (<kine-scanner> / FrameCollector)    │
-│                                         │  Live Scan │                                         │
-│  - Splits URL across N frames (4..12)   │  ~1.0-2.0s │  - Auto-detects N frames (Zero Config)  │
-│  - XOR-masks bytes with rolling Nonce   ├───────────►│  - Enforces burst timer (anti-photo)    │
-│  - Signs timestamp + URL (HMAC-SHA256)  │            │  - Checks max-age timestamp (anti-video)│
-│  - Never repeats past QR frames         │            │  - Unlocks Signed URL or POSTs Webhook  │
-└─────────────────────────────────────────┘            └─────────────────────────────────────────┘
-```
+- **No single frame is enough.** The destination URL is split across `N` frames (`4`, `6`, `8`, `12`). A photo captures one frame, which is useless on its own.
+- **Every cycle is new.** Each loop gets a fresh timestamp, signature, and masking nonce, so frames from different cycles can't be combined.
+- **Recordings expire.** The scanner must capture all frames within a short burst window, and the signed token is rejected after `maxAge` seconds (default `6`).
+
+It's a small TypeScript library: a generator (`<kine-code>` / `Generator`), a scanner (`<kine-scanner>` / `Scanner` / `FrameCollector`), and a one-line server verifier (`verifySignedUrl`).
 
 ---
 
-## Installation
-
-Install `kinecode` via your preferred package manager:
+## Quick start
 
 ```bash
-# npm
-npm install kinecode
-
-# pnpm
-pnpm add kinecode
-
-# yarn
-yarn add kinecode
-
-# bun
-bun add kinecode
+npm install kinecode     # or pnpm add / yarn add / bun add
 ```
 
-### Zero-Install CDN (Plain HTML)
-
-Load KineCode directly from **jsDelivr** or **unpkg** without a build step:
+Or without a build step:
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/kinecode/dist/kinecode.js"></script>
 ```
 
----
-
-## Part 1: Displaying a KineCode (Generator)
-
-Both `<kine-code>` (HTML Web Component) and `new Generator(options)` (JavaScript class) share the **exact same `camelCase` attribute/option names** (**1:1 standard**).
-
-### 1.1 Generator Options Reference (`<kine-code>` & `new Generator`)
-
-| Option / Attribute (`camelCase`) | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `url` | `string` | `''` | Destination URL or Webhook endpoint split and XOR-masked across the $N$ cyclic frames. |
-| `frames` | `number` | `8` | Number of cyclic frames (`4`, `6`, `8`, `12`). **4 frames** = ~1.0s scan at 4 FPS; **8 frames** = ~2.0s scan. |
-| `fps` | `number` | `4` | Frame rotation speed in Hz (`2`, `4`, `6`, `8`). Total cycle duration is `frames / fps` seconds. |
-| `maxAge` | `number` | `6` | Freshness window in seconds. Recorded videos forwarded on chat apps fail once `maxAge` elapses. |
-| `actionMode` | `'redirect' \| 'webhook' \| 'both'` | `'redirect'` | What the scanner does after unlocking all $N$ frames (open Signed URL, `POST` JSON to webhook, or both). |
-| `rotateEveryCycle` | `boolean` | `true` | Generates a new XOR `cycleNonce` and signature after each cycle pass so past photos are useless. |
-| `sessionId` | `string \| number` | `'0x1A2B3C4D'` | 32-bit room, lecture, or event identifier (e.g. `'0xCAFE1234'` or `3405697588`). |
-| `secretKey` | `string \| Uint8Array` | Random 32B | 64-character hex secret key (32 bytes) used to sign the payload via HMAC-SHA256. <br/>⚠️ **Testing/prototyping only when declared in client HTML/JS.** In production, secret keys must never be exposed to public clients. See [Production Security Architecture](#part-3-production-security--backend-verification). |
-| `size` | `number` | `600` | Display width/height in pixels. |
-
-> [!WARNING]
-> **Production Security: Never Expose `secretKey` in Public Client Code**
-> In the quick-start snippets below, `secretKey` is shown directly in HTML for immediate local testing without needing a backend. In real production deployments:
-> 1. **Zero-Trust Scanner:** The client `<kine-scanner>` does **NOT** need `secretKey` (leave it omitted). It reads the token and passes it to your server.
-> 2. **Backend Verification:** Only the backend server holds the secret key in `process.env.KINECODE_SECRET_KEY` and validates incoming check-ins with `verifySignedUrl()`.
-> 3. **Protected Presenter Screen:** The projector screen displaying `<kine-code>` should run in an authenticated presenter session, or receive server-signed tokens via WebSocket/SSE.
-> See [Part 3: Production Security & Backend Verification](#part-3-production-security--backend-verification) for the complete architecture.
-
-#### Choosing `frames` vs `fps` (Scan Speed vs Security)
-
-| `frames` | At `2 FPS` | At `4 FPS` (Recommended) | At `6 FPS` | At `8 FPS` | Best Use Case |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`4` Frames** | `~2.0s` | **`~1.0s`** | `~0.7s` | `~0.5s` | Fast lecture check-in, turnstiles, quick doors |
-| **`6` Frames** | `~3.0s` | **`~1.5s`** | `~1.0s` | `~0.8s` | Balanced classroom & conference attendance |
-| **`8` Frames** | `~4.0s` | **`~2.0s`** | `~1.3s` | `~1.0s` | High-security exams & longer URLs |
-| **`12` Frames** | `~6.0s` | **`~3.0s`** | `~2.0s` | `~1.5s` | Maximum fragmentation & strict proximity |
-
----
-
-### 1.2 Framework Integration Examples (Generator)
-
-#### A) Plain HTML / Vanilla JS
+**Presenter screen** (projector):
 
 ```html
-<!-- Option 1: Declarative Web Component (Presenter / Projector Screen) -->
-<script type="module" src="https://cdn.jsdelivr.net/npm/kinecode/dist/kinecode.js"></script>
-
-<kine-code
-  url="https://presenze.unimi.it/checkin?aula=302"
-  frames="4"
-  fps="4"
-  maxAge="6"
-  actionMode="redirect"
-  rotateEveryCycle="true"
-  sessionId="0xCAFE1234"
-  <!-- Optional for local testing: in production omit or inject in authenticated presenter session -->
-  secretKey="0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
-  size="500">
-</kine-code>
+<kine-code url="https://example.com/checkin?room=302" frames="4" fps="4"></kine-code>
 ```
 
+**Attendee phone:**
+
 ```html
-<!-- Option 2: Programmatic Vanilla JS -->
-<canvas id="qr-canvas"></canvas>
-
-<script type="module">
-  import { Generator } from 'https://cdn.jsdelivr.net/npm/kinecode/dist/kinecode.js';
-
-  const generator = new Generator({
-    canvas: document.getElementById('qr-canvas'),
-    url: 'https://presenze.unimi.it/checkin?aula=302',
-    frames: 4,
-    fps: 4,
-    maxAge: 6,
-    actionMode: 'redirect',
-    rotateEveryCycle: true,
-    sessionId: '0xCAFE1234',
-    secretKey: '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20',
-    size: 500
-  });
-
-  generator.start();
+<kine-scanner autoStart></kine-scanner>
+<script>
+  document.querySelector('kine-scanner')
+    .addEventListener('valid-scan', (e) => location.href = e.detail.signedUrl);
 </script>
 ```
 
-#### B) React / Next.js / Vite
+> [!NOTE]
+> Camera access requires a **secure context** (HTTPS or `localhost`). With no `secretKey`, the generator creates a random key each time it loads. That's fine for trying it out, but your server can't verify the result. See [Server verification](#server-verification).
+
+---
+
+## How it works
+
+```
+┌──────────────────────────────┐    camera, ~1–3 s     ┌──────────────────────────────┐
+│  PRESENTER  <kine-code>      │ ────────────────────► │  ATTENDEE  <kine-scanner>    │
+│  • signs (session, ts, url)  │                       │  • auto-detects N            │
+│  • splits envelope in N QRs  │                       │  • enforces burst window     │
+│  • XOR-masks with cycleNonce │                       │  • rebuilds URL + kc_* params│
+│  • new nonce every cycle     │                       │  • redirects / POSTs webhook │
+└──────────────────────────────┘                       └──────────────┬───────────────┘
+                                                                      │ signed URL
+                                                        ┌─────────────▼───────────────┐
+                                                        │  YOUR SERVER                │
+                                                        │  verifySignedUrl(url, key)  │
+                                                        └─────────────────────────────┘
+```
+
+1. The generator builds a binary **`KC2` envelope**: `sessionId`, `timestampSec`, `maxAgeSec`, `actionMode`, a **7-byte truncated HMAC-SHA256** signature, and the target URL, protected by a CRC-8.
+2. The envelope is split into `N` chunks. Each chunk is XOR-masked with a per-cycle `cycleNonce` and rendered as a standard QR code (`KC2:...`).
+3. The scanner collects all `N` frames from the same cycle within the burst window, unmasks them, checks the CRC and freshness, and rebuilds the URL with `kc_session`, `kc_ts`, `kc_nonce`, `kc_sig` query parameters.
+4. Your server recomputes the HMAC and checks the timestamp.
+
+> [!IMPORTANT]
+> The XOR mask **hides the URL from casual inspection; it is not encryption**. The nonce travels inside each frame. Security comes from the **HMAC signature + freshness check on your server**, not from the mask.
+
+---
+
+## Generator
+
+`<kine-code>` attributes and `new Generator(options)` options share the same `camelCase` names. The web component also accepts `kebab-case` (`max-age`, `session-id`, …).
+
+| Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `url` | `string` | `''` | Destination URL / webhook split across the frames. |
+| `frames` | `number` | `8` | Frames per cycle. Recommended `4`, `6`, `8`, `12` (accepted range 2–15). |
+| `fps` | `number` | `4` | Frame rate in Hz. One cycle lasts `frames / fps` seconds. |
+| `maxAge` | `number` | `6` | Token freshness window in seconds (clamped 2–120). **Part of the signed message.** |
+| `actionMode` | `'redirect' \| 'webhook' \| 'both'` | `'redirect'` | What the scanner does after unlocking. **Part of the signed message.** |
+| `rotateEveryCycle` | `boolean` | `true` | New nonce + signature after every cycle. |
+| `sessionId` | `string \| number` | `0x1A2B3C4D` (`Generator`), `0xCAFE1234` (`<kine-code>`) | 32-bit room / lecture / event id, e.g. `'0xCAFE1234'`. |
+| `secretKey` | `string \| Uint8Array` | random 32 bytes | 64-char hex HMAC key. ⚠️ See [Security model](#security-model--limitations). |
+| `size` | `number` | `600` | Canvas size in px. |
+| `skin` | `'fluid-wave' \| 'radial-equalizer' \| 'sonar-ripple'` | `'fluid-wave'` | Decorative animation around the QR. |
+| `centerLogoUrl` | `string` | — | Optional logo image drawn in the center. |
+| `showAntiStream` | `boolean` | `true` | Shows the anti-stream luminance ring (`showAntiStreamRing` in `Generator`). |
+
+### Choosing `frames` × `fps`
+
+The scanner must lock all frames within the **burst window**: `maxCaptureMs` if set, otherwise `max(3000, frames × 450)` ms. A cycle that's longer than the window **can never be scanned**.
+
+| `frames` | Burst window (default) | 2 FPS | **4 FPS** (recommended) | 6 FPS | 8 FPS | Typical use |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| `4` | 3.0 s | 2.0 s | **1.0 s** | 0.7 s | 0.5 s | Fast check-in, doors |
+| `6` | 3.0 s | 3.0 s ⚠️ | **1.5 s** | 1.0 s | 0.8 s | Classrooms, conferences |
+| `8` | 3.6 s | ❌ 4.0 s | **2.0 s** | 1.3 s | 1.0 s | Exams, longer URLs |
+| `12` | 5.4 s | ❌ 6.0 s | **3.0 s** | 2.0 s | 1.5 s | Very long URLs |
+
+❌ = cycle longer than the default window. Raise the scanner's `maxCaptureMs` if you need these combinations. ⚠️ = no margin for missed frames.
+
+### Programmatic usage
+
+```ts
+import { Generator } from 'kinecode';
+
+const generator = new Generator({
+  canvas: document.querySelector('canvas')!,
+  url: 'https://example.com/checkin?room=302',
+  frames: 4,
+  fps: 4,
+  sessionId: '0xCAFE1234',
+  secretKey: keyFromYourAuthenticatedSession, // never hard-code in public pages
+});
+
+generator.start();
+// later: generator.stop();
+```
+
+<details>
+<summary><b>React</b></summary>
 
 ```tsx
 import { useEffect, useRef } from 'react';
-import { Generator, type ActionMode } from 'kinecode';
+import { Generator } from 'kinecode';
 
-interface KineCodeProps {
-  url: string;
-  frames?: number;
-  fps?: number;
-  maxAge?: number;
-  actionMode?: ActionMode;
-  sessionId?: string | number;
-  secretKey: string;
-  size?: number;
-}
-
-export function KineCodeQR({
-  url,
-  frames = 4,
-  fps = 4,
-  maxAge = 6,
-  actionMode = 'redirect',
-  sessionId = '0xCAFE1234',
-  secretKey,
-  size = 500
-}: KineCodeProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+export function KineCodeQR({ url, secretKey }: { url: string; secretKey: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const generator = new Generator({
-      canvas: canvasRef.current,
-      url,
-      frames,
-      fps,
-      maxAge,
-      actionMode,
-      rotateEveryCycle: true,
-      sessionId,
-      secretKey,
-      size
-    });
-
+    if (!ref.current) return;
+    const generator = new Generator({ canvas: ref.current, url, secretKey, frames: 4, fps: 4 });
     generator.start();
     return () => generator.stop();
-  }, [url, frames, fps, maxAge, actionMode, sessionId, secretKey, size]);
+  }, [url, secretKey]);
 
-  return <canvas ref={canvasRef} style={{ width: '100%', maxWidth: `${size}px`, borderRadius: '12px' }} />;
+  return <canvas ref={ref} style={{ width: '100%', maxWidth: 500 }} />;
 }
 ```
+</details>
 
-#### C) Vue 3 / Nuxt
+<details>
+<summary><b>Vue 3</b></summary>
 
 ```vue
-<template>
-  <canvas ref="canvasEl" style="width: 100%; max-width: 500px; border-radius: 12px" />
-</template>
+<template><canvas ref="canvasEl" style="width: 100%; max-width: 500px" /></template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Generator } from 'kinecode';
 
+const props = defineProps<{ url: string; secretKey: string }>();
 const canvasEl = ref<HTMLCanvasElement | null>(null);
 let generator: Generator | null = null;
 
 onMounted(() => {
-  if (!canvasEl.value) return;
-  generator = new Generator({
-    canvas: canvasEl.value,
-    url: 'https://presenze.unimi.it/checkin?aula=302',
-    frames: 4,
-    fps: 4,
-    maxAge: 6,
-    actionMode: 'redirect',
-    sessionId: '0xCAFE1234',
-    secretKey: '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20',
-    size: 500
-  });
+  generator = new Generator({ canvas: canvasEl.value!, url: props.url, secretKey: props.secretKey, frames: 4 });
   generator.start();
 });
-
 onUnmounted(() => generator?.stop());
 </script>
 ```
+</details>
 
-#### D) Angular (Standalone v17+)
+<details>
+<summary><b>Angular (standalone)</b></summary>
 
-```typescript
+```ts
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import 'kinecode'; // Registers <kine-code> and <kine-scanner>
+import 'kinecode'; // registers <kine-code> and <kine-scanner>
 
 @Component({
   selector: 'app-attendance-qr',
   standalone: true,
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
-  template: `
-    <kine-code
-      url="https://presenze.unimi.it/checkin?aula=302"
-      frames="4"
-      fps="4"
-      maxAge="6"
-      actionMode="redirect"
-      rotateEveryCycle="true"
-      sessionId="0xCAFE1234"
-      secretKey="0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
-      size="500">
-    </kine-code>
-  `
+  template: `<kine-code url="https://example.com/checkin?room=302" frames="4" fps="4"></kine-code>`,
 })
 export class AttendanceQrComponent {}
 ```
+</details>
 
 ---
 
-## Part 2: Scanning & Decoding a KineCode (Scanner)
+## Scanner
 
-> **Which one do you need? (Pick ONLY ONE based on your platform)**
-> - **Web (Drop-in HTML Widget):** Use **`<kine-scanner>`** if you want a ready-made camera widget with 1 HTML tag.
-> - **Web (Custom React / Vue / JS UI):** Use **`new Scanner(options)`** if you want full control over your own `<video>` element and modal UI.
-> - **Native Mobile App (React Native / Expo / iOS / Android):** Use **`new FrameCollector(options)`** if you already read QR strings with a native mobile camera (`expo-camera`, `VisionCamera`, etc.) and only need the KineCode multi-frame decoder.
+Pick **one**:
 
-### 2.1 Scanner Options Reference (Unified `camelCase`)
+| You have… | Use |
+| :--- | :--- |
+| A web page, and you want a ready-made camera widget | `<kine-scanner>` |
+| A web page with your own `<video>` / UI | `new Scanner(options)` |
+| A native app that already reads QR strings (`expo-camera`, VisionCamera, ML Kit, …) | `new FrameCollector(options)` |
 
-| Option / Attribute (`camelCase`) | Type | Default | Description |
+| Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `secretKey` | `string \| Uint8Array` | `undefined` | Optional 32-byte hex key for client-side local verification. In production, leave `undefined` (Zero-Trust Scanner): send the scanned token to your server for backend verification. |
-| `maxAge` | `number` | `6` | Maximum allowed token age in seconds before rejecting a recorded video. |
-| `maxCaptureMs` | `number` | Auto (~3000ms) | Maximum burst time in ms from the first locked frame to the $N$-th frame. |
-| `webhookUrl` | `string` | `undefined` | Optional override endpoint to `POST` verified scan results. |
-| `autoRedirect` | `boolean` | `false` | Automatically redirects the browser to `signedUrl` when `actionMode` is `'redirect'` or `'both'`. |
-| `autoStart` | `boolean` | `false` | (`<kine-scanner>` only) Automatically requests camera permission on mount. |
+| `secretKey` | `string \| Uint8Array` | — | Optional client-side signature check. **Leave unset in production** and verify on the server. |
+| `maxAge` | `number` | `6` | Max token age in seconds. The stricter of this and the generator's `maxAge` applies. |
+| `maxCaptureMs` | `number` | `max(3000, N × 450)` | Burst window from first to last frame. |
+| `webhookUrl` | `string` | target URL | Endpoint for the `POST` in `webhook` / `both` mode. |
+| `autoRedirect` | `boolean` | `false` | Navigate to `signedUrl` in `redirect` / `both` mode. |
+| `autoStart` | `boolean` | `false` | `<kine-scanner>` only: start the camera on mount. |
 
----
-
-### 2.2 Web Option A: `<kine-scanner>` Web Component
+### `<kine-scanner>`
 
 ```html
-<script type="module" src="https://cdn.jsdelivr.net/npm/kinecode/dist/kinecode.js"></script>
-
-<kine-scanner
-  autoStart="true"
-  autoRedirect="false"
-  maxAge="6">
-</kine-scanner>
+<kine-scanner autoStart maxAge="6"></kine-scanner>
 
 <script>
   const scanner = document.querySelector('kine-scanner');
 
-  // Fired whenever a new frame in the cycle is locked (e.g. 1/4, 2/4, 3/4)
-  scanner.addEventListener('scan-progress', (e) => {
-    console.log(`Capturing: ${e.detail.lockedFrames} / ${e.detail.totalFrames} frames`);
-  });
+  scanner.addEventListener('scan-progress', (e) =>
+    console.log(`${e.detail.lockedFrames}/${e.detail.totalFrames}`));
 
-  // Fired when all N frames are unlocked and verified
-  scanner.addEventListener('valid-scan', (e) => {
-    const result = e.detail;
-    console.log('Unlocked Signed URL:', result.signedUrl);
-    console.log('Session ID:', result.sessionId);
-    // Redirect user or submit attendance to your backend:
-    window.location.href = result.signedUrl;
-  });
+  scanner.addEventListener('valid-scan', (e) =>
+    fetch('/api/checkin', { method: 'POST', body: JSON.stringify({ url: e.detail.signedUrl }) }));
 
-  // Fired if a scan fails (e.g. expired video recording or invalid signature)
-  scanner.addEventListener('scan-error', (e) => {
-    console.warn('Scan rejected:', e.detail.error);
-  });
+  scanner.addEventListener('scan-error', (e) => console.warn(e.detail.error));
 </script>
 ```
 
----
+### `new Scanner()`
 
-### 2.3 Option B: React / Vue / JS Web Camera (`new Scanner`)
+```ts
+import { Scanner } from 'kinecode';
 
-```tsx
-import { useEffect, useRef, useState } from 'react';
-import { Scanner, type VerificationResult } from 'kinecode';
+const scanner = new Scanner({
+  videoElement: document.querySelector('video')!,
+  overlayCanvas: document.querySelector('canvas')!,  // AR guidance overlay
+  onProgress: (locked, total) => console.log(`${locked}/${total}`),
+  onGuidanceChange: (g) => console.log(g.message),  // "too far", "stabilize", …
+  onValidScan: (result) => { if (result.valid) submit(result.signedUrl); },
+});
 
-export function KineScannerView({ onVerified }: { onVerified: (res: VerificationResult) => void }) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const overlayRef = useRef<HTMLCanvasElement | null>(null);
-  const [progress, setProgress] = useState({ locked: 0, total: 0 });
-
-  useEffect(() => {
-    if (!videoRef.current || !overlayRef.current) return;
-
-    const scanner = new Scanner({
-      videoElement: videoRef.current,
-      overlayCanvas: overlayRef.current,
-      maxAge: 6,
-      autoRedirect: false,
-      onProgress: (locked, total) => setProgress({ locked, total }),
-      onValidScan: (result) => {
-        if (result.valid) onVerified(result);
-      }
-    });
-
-    scanner.startCamera();
-    return () => scanner.stop();
-  }, [onVerified]);
-
-  return (
-    <div style={{ position: 'relative', maxWidth: '480px', width: '100%' }}>
-      <video ref={videoRef} playsInline muted style={{ width: '100%', borderRadius: '12px' }} />
-      <canvas ref={overlayRef} width={640} height={480} style={{ position: 'absolute', inset: 0, width: '100%' }} />
-      <p>
-        {progress.total > 0
-          ? `Locked: ${progress.locked} / ${progress.total} frames`
-          : 'Point camera at KineCode (Auto-Detect)...'}
-      </p>
-    </div>
-  );
-}
+await scanner.startCamera();
+// later: scanner.stop();
 ```
 
----
+### `FrameCollector` (native / custom readers)
 
-### 2.4 Option C: Custom / Native Mobile App Scanner (`FrameCollector`)
-
-If you already have a mobile app (React Native `expo-camera`, `react-native-vision-camera`, Capacitor, or Web Worker) with a native QR barcode reader, use **`FrameCollector`**. Feed each raw QR string read by the hardware camera into `collector.pushFrame(qrString)`:
-
-```typescript
+```ts
 import { FrameCollector } from 'kinecode';
 
-// Instantiate once (auto-detects 4, 6, 8, or 12 frames automatically)
-const collector = new FrameCollector({
-  secretKey: '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20', // Optional
-  maxAge: 6 // Rejects recorded videos older than 6s
-});
+const collector = new FrameCollector({ maxAge: 6 });
 
-// Inside your camera's onBarcodeScanned callback:
-function onQrCodeRead(rawQrString: string) {
-  const step = collector.pushFrame(rawQrString);
-
-  if (step.status === 'collecting') {
-    console.log(`Progress: ${step.lockedFrames} / ${step.totalFrames} frames`);
-  } else if (step.status === 'verified') {
-    console.log('✅ Unlocked Signed URL:', step.result?.signedUrl);
-    console.log('Captured in:', step.result?.captureDurationMs, 'ms');
-  } else if (step.status === 'rejected') {
-    console.warn('❌ Rejected:', step.result?.error);
-  }
+function onBarcodeScanned(text: string) {
+  const step = collector.pushFrame(text);
+  if (step.status === 'collecting') showProgress(step.lockedFrames, step.totalFrames);
+  if (step.status === 'verified')   submit(step.result!.signedUrl);
+  if (step.status === 'rejected')   console.warn(step.result!.error);
 }
 ```
 
----
+See [`mobile/App.tsx`](mobile/App.tsx) for a complete Expo example.
 
-## Part 3: Production Security & Backend Verification
+### Webhook payload
 
-### 3.1 Production Architecture (Zero-Trust Client Model)
+In `webhook` / `both` mode, the scanner sends a `POST` (`Content-Type: application/json`) with this body:
 
-> [!IMPORTANT]
-> **Why `secretKey` must NEVER be exposed on end-user client devices:**
-> In HMAC-SHA256 (symmetric cryptography), the same key that verifies a token can also forge new tokens. If the `secretKey` were distributed to attendees' phones or embedded in public web pages, any user could open DevTools or decompile the app, extract the key, and forge attendance check-ins from home without physical presence.
-
-In a secure production deployment, keys are managed using a **Zero-Trust Client Architecture**:
-
-```text
- ┌────────────────────────────────────────────────────────┐
- │                   BACKEND SERVER                       │
- │  • Stores KINECODE_SECRET_KEY in environment variables │
- │  • Validates HMAC signature & freshness window         │
- └──────────────┬─────────────────────────▲───────────────┘
-                │                         │
-     1. Token / Key Stream                │ 3. Check-In Request:
-        (WebSocket / SSE / Auth Kiosk)    │    Signed URL or JSON
-                │                         │    { sessionId, ts, sig }
-                ▼                         │
-     ┌─────────────────────┐      ┌───────┴───────────────┐
-     │  PRESENTER DISPLAY  │ 2.   │  ATTENDEE SMARTPHONE  │
-     │    (<kine-code>)    │ Opti-│   (<kine-scanner>)    │
-     │ • Classroom screen  │ cal  │ • ZERO-TRUST client   │
-     │ • Protected session │ Pass │ • NO secret key       │
-     └─────────────────────┘      └───────────────────────┘
+```json
+{
+  "event": "proof_of_presence_verified",
+  "sessionId": 3405697588,
+  "sessionIdHex": "0xCAFE1234",
+  "timestamp": 1729681204,
+  "timeDiffSeconds": 1,
+  "captureDurationMs": 1120,
+  "totalFrames": 4,
+  "cycleNonce": 167,
+  "signature": "a9f14bc32e7810",
+  "targetUrl": "https://example.com/checkin?room=302",
+  "signedUrl": "https://example.com/checkin?room=302&kc_session=0xCAFE1234&kc_ts=1729681204&kc_nonce=A7&kc_sig=a9f14bc32e7810",
+  "verifiedAt": "2026-10-23T19:40:05.000Z",
+  "antiStreamScore": 0.82
+}
 ```
 
-#### Key Rules for Production:
-1. **Attendee Scanners (`<kine-scanner>`, Mobile App):**
-   - **Do NOT configure `secretKey` on the scanner.** Leave it `undefined`.
-   - The scanner's job is solely optical reception: it reconstructs the signed URL and tokens (`sessionId`, `timestamp`, `cycleNonce`, `signature`) and passes them to your server.
-2. **Presenter Screen (`<kine-code>`):**
-   - **Option A (Authenticated Dashboard):** Render `<kine-code>` on a private projector screen inside a password-protected teacher/admin portal or dedicated hardware terminal (kiosk). Students cannot view the HTML source of the projector screen.
-   - **Option B (Server-Assisted Token Streaming):** Have the backend sign the ephemeral payloads and stream them to the presenter screen via WebSocket or Server-Sent Events (SSE). The display frontend never holds the master secret key.
-   - **Option C (Asymmetric Ed25519 Signing):** Sign tokens using an Ed25519 private key on your server. Any client can hold the public key to verify authenticity without the ability to forge tokens.
+The phone sends this body, so **don't trust it**. Re-verify `signedUrl` on the server.
 
 ---
 
-### 3.2 1-Line Backend Verification (`verifySignedUrl`)
+## Server verification
 
-When all $N$ frames are captured by the attendee's phone, the scanner reconstructs the destination `url` and appends four cryptographic query parameters:
+The scanner produces a URL like:
 
 ```text
-https://presenze.unimi.it/checkin?aula=302&kc_session=0xCAFE1234&kc_ts=1729681204&kc_nonce=A7&kc_sig=a9f14bc32e7810
+https://example.com/checkin?room=302&kc_session=0xCAFE1234&kc_ts=1729681204&kc_nonce=A7&kc_sig=a9f14bc32e7810
 ```
 
-To verify on your Node.js / Express / Next.js / Supabase backend that the check-in is authentic and happened live during the current window, call **`verifySignedUrl`**:
-
-```typescript
+```ts
 import { verifySignedUrl } from 'kinecode';
 
-// The secret key is stored securely in backend environment variables
-const SECRET_KEY = process.env.KINECODE_SECRET_KEY!;
+const KEY = process.env.KINECODE_SECRET_KEY!; // same key as the generator
 
-app.get('/checkin', async (req, res) => {
-  const fullUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+app.get('/checkin', requireLogin, async (req, res) => {
+  // Rebuild the exact URL the generator signed. Behind a proxy, use your public origin, not req.protocol.
+  const url = `https://example.com${req.originalUrl}`;
 
-  // 1-line check: validates HMAC-SHA256 signature AND verifies timestamp freshness
-  const verification = verifySignedUrl(fullUrl, SECRET_KEY, { maxAge: 6 });
+  const v = verifySignedUrl(url, KEY, { maxAge: 6, actionMode: 'redirect' });
+  if (!v.valid) return res.status(403).json({ error: v.error });
 
-  if (!verification.valid) {
-    return res.status(403).json({ error: verification.error });
-  }
-
-  // Cryptographically authentic, live physical presence!
-  // Register attendance for the authenticated user session:
-  await db.recordAttendance({
-    userId: req.user.id,
-    sessionId: verification.sessionId,
-    timestamp: verification.timestamp
-  });
-
-  return res.json({
-    success: true,
-    sessionId: verification.sessionId,
-    ageSeconds: verification.timeDiffSeconds
-  });
+  // Bind to the logged-in user and reject token reuse (see Security model).
+  await db.recordAttendanceOnce({ userId: req.user.id, sessionId: v.sessionId, sig: req.query.kc_sig });
+  res.json({ ok: true });
 });
 ```
 
+> [!WARNING]
+> `maxAge`, `actionMode`, and the **base URL** (everything before `kc_session`) are part of the signed message. If any of them differs from the generator's value, **every signature will be rejected**. Use the same values on both sides.
+
 ---
 
-## Exported Functions & API Reference
+## Security model & limitations
 
-All classes and low-level cryptographic/framing functions are exported directly from the root `kinecode` package:
+HMAC is symmetric: **whoever holds `secretKey` can mint valid tokens**. Recommended deployment:
+
+- **Scanner (attendee devices):** no `secretKey`. It only reads the code optically and forwards `signedUrl` to your server.
+- **Presenter screen:** load the key only inside an authenticated presenter/admin page or a kiosk. Never put it in a public page's source.
+- **Server:** keeps the key in an environment variable and calls `verifySignedUrl`.
+
+What KineCode **does** protect against:
+- ✅ photos of the code (one frame isn't enough, and frames from different cycles don't combine);
+- ✅ replaying a recording or a forwarded link after `maxAge` seconds;
+- ✅ tampering with the URL, session, or timestamp (HMAC).
+
+What it **does not** protect against (handle these in your app):
+- ❌ **Link sharing within the freshness window.** A student in the room can forward `signedUrl` and it stays valid for `maxAge` seconds. Require login, bind the check-in to the user, and **accept each `kc_sig` only once**. `verifySignedUrl` is stateless and doesn't do this for you.
+- ❌ **Live video calls** pointed at the projector. `AntiStreamDetector` is only a heuristic.
+- ❌ **Strong cryptographic guarantees.** The signature is truncated to **56 bits** and compared in non-constant time. That's fine for short-lived attendance tokens; don't use it for payments or authentication.
+- ❌ **Public-key verification.** The `Generator` can produce truncated Ed25519 signatures (`useHmac: false`), but a 7-byte truncated Ed25519 signature **can't be verified** with the public key, and every verifier in this package checks HMAC only.
+- ❌ **Clock skew.** Server and presenter clocks must agree within a few seconds (use NTP).
+
+Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
+
+---
+
+## API reference
+
+Main exports from `kinecode`:
 
 | Export | Kind | Description |
 | :--- | :--- | :--- |
-| `Generator` | Class | Renders the animated multi-frame QR code on an `HTMLCanvasElement`. |
-| `Scanner` | Class | Camera + AR HUD scanner that decodes frames via `jsQR` and verifies liveness. |
-| `FrameCollector` | Class | Stateful headless collector (`pushFrame(qrText)`) for React Native / custom scanners. |
-| `KineCodeElement` | Custom Element | `<kine-code>` Web Component class (auto-registered on import). |
-| `KineScannerElement` | Custom Element | `<kine-scanner>` Web Component class (auto-registered on import). |
-| `verifySignedUrl(url, key, opts)` | Function | 1-line server validator for reconstructed URLs (`kc_session`, `kc_ts`, `kc_sig`). |
-| `decodeQrFrameString(qrText)` | Function | Decodes and validates a single `KC2:` or `KC:` frame string and checks its frame CRC-8. |
-| `assembleDynamicEnvelope(map)` | Function | Unmasks XOR chunks and reconstructs a `DynamicEnvelope` from $N$ captured `FrameData` items. |
-| `buildDynamicEnvelope(opts)` | Function | Packs `sessionId`, `timestampSec`, `maxAgeSec`, `signature7`, and `targetUrl` into a binary envelope. |
-| `encodeEnvelopeToFrames(env, N, nonce)` | Function | Splits and XOR-masks a binary envelope across `N` cyclic `FrameData` objects. |
-| `constructSignedUrl(url, id, ts, sig, nonce)` | Function | Appends `kc_session`, `kc_ts`, `kc_nonce`, and `kc_sig` query parameters to a URL. |
-| `generateKeyPair()` | Function | Generates a new random 32-byte hex/byte secret keypair. |
-| `computeTruncatedHmacSync(msg, key)` | Function | Synchronous 7-byte truncated HMAC-SHA256 signature calculator. |
-| `fromHex(hex)` / `toHex(bytes)` | Function | Converts between hex strings and `Uint8Array`. |
+| `Generator` | class | Renders the animated code on a canvas. `start()`, `stop()`, `setTargetUrl()`, `setFps()`, … |
+| `KineCodeElement` | custom element | `<kine-code>`, auto-registered on import. |
+| `Scanner` | class | Camera scanner with `jsQR` decoding and AR guidance. `startCamera()`, `stop()`. |
+| `KineScannerElement` | custom element | `<kine-scanner>`, auto-registered on import. Events: `scan-progress`, `valid-scan`, `scan-error`. |
+| `FrameCollector` | class | Headless decoder: `pushFrame(qrText)`, `reset()`. |
+| `verifySignedUrl(url, key, { maxAge?, actionMode? })` | function | Server-side HMAC + freshness check. |
+| `constructSignedUrl(url, sessionId, ts, sig, nonce?)` | function | Appends `kc_*` parameters. |
+| `buildDynamicEnvelope` / `parseDynamicEnvelope` | function | Encode / decode a `KC2` envelope. |
+| `encodeEnvelopeToFrames(env, N, nonce)` / `assembleDynamicEnvelope(map, N)` | function | Split + mask / unmask + reassemble. |
+| `decodeQrFrameString(text)` | function | Parse a single `KC2:` / legacy `KC:` frame. |
+| `computeTruncatedHmacSync(msg, key)` | function | 7-byte HMAC-SHA256. |
+| `generateKeyPair()` | async function | Random 32-byte key: `{ privateKeyHex, publicKeyHex, … }`. Use `privateKeyHex` as `secretKey`. |
+| `toHex` / `fromHex` | function | Hex ↔ `Uint8Array`. |
+| `CornerDetector`, `AntiStreamDetector` | class | Low-level vision helpers used by `Scanner`. |
+| `renderFluidWave`, `renderRadialEqualizer`, `renderSonarRipple` | function | Skin renderers. |
+
+Full types: [`packages/kinecode/src/index.ts`](packages/kinecode/src/index.ts).
 
 ---
 
-## Monorepo Architecture & Repository Structure
+## Development
 
-The repository is organized as a clean workspace separating the core protocol/SDK, the Vite interactive web application, and the native Expo mobile scanner:
+```bash
+git clone <repo-url> && cd kinecode
+npm install
 
-```text
-kinecode/
-├── packages/
-│   └── kinecode/                  # Published npm package ("kinecode") — Protocol, Generator, Scanner & Web Components
-│       ├── src/
-│       │   ├── core/              # Framing (KC2 envelope, FrameCollector), CRC-8, HMAC-SHA256 / Ed25519
-│       │   ├── generator/         # Generator class, <kine-code> Web Component & visual skins
-│       │   ├── scanner/           # Scanner class, <kine-scanner> Web Component, CornerDetector & AntiStream
-│       │   └── index.ts           # Public SDK entry point
-│       └── test/                  # Vitest unit & end-to-end optical test suites
-├── web/                           # Interactive Web Dashboard, QR Builder & Standalone Web Scanner (Vite)
-│   ├── src/
-│   │   ├── main.ts                # Dual Testbench, Live Code Inspector & QR Builder UI
-│   │   └── scanner-page.ts        # Standalone mobile-web camera scanner
-│   ├── index.html                 # Main web testbench & builder page
-│   └── scanner.html               # Standalone web scanner page
-├── mobile/                        # Native iOS / Android Hardware QR Scanner App (React Native / Expo)
-│   ├── App.tsx                    # Uses expo-camera + FrameCollector from "kinecode"
-│   └── metro.config.js            # Monorepo workspace bundler config
-└── package.json                   # Root workspace scripts (dev, build, test, mobile)
+npm run dev          # web testbench + QR builder (Vite)
+npm run dev:https    # same over HTTPS, needed to use the camera from a phone on your LAN
+npm test             # Vitest (packages/kinecode)
+npm run build        # library + web
+
+npm --prefix mobile install && npm run mobile:start   # Expo scanner app
 ```
 
----
+```text
+packages/kinecode/   # published npm package: core (framing, crypto, crc8), generator, scanner
+web/                 # Vite testbench, QR builder, standalone web scanner
+mobile/              # Expo / React Native scanner using FrameCollector
+```
 
-## Automated Releases & CI/CD (GitHub Actions)
-
-This repository includes two pre-configured GitHub Actions workflows in `.github/workflows/`:
-1. **[`ci.yml`](.github/workflows/ci.yml):** Runs `npm test` and `npm run build` across `packages/kinecode` and `web` on every push and pull request.
-2. **[`release.yml`](.github/workflows/release.yml):** Automatically runs on every push to `main`:
-   - Increments the version in `packages/kinecode/package.json` (`minor` if the commit starts with `feat:`, otherwise `patch`).
-   - Pushes the new Git tag (`v0.1.x`) and creates a **GitHub Release** with auto-generated release notes.
-   - Publishes `packages/kinecode` to **npm** automatically if `NPM_TOKEN` is set in your GitHub repository secrets (*Settings → Secrets and variables → Actions → New repository secret → `NPM_TOKEN`*).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, CI, and release process.
 
 ---
 
 ## License
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+[MIT](LICENSE)
