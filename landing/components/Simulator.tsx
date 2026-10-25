@@ -255,7 +255,7 @@ export default function Simulator() {
               {scannerQrDataUrl ? (
                 <img
                   src={scannerQrDataUrl}
-                  alt="Inquadra questo QR code da telefono per aprire lo scanner"
+                  alt="Scan this QR code with your phone to open the scanner"
                   className="w-44 h-44 rounded-lg block"
                 />
               ) : (
@@ -265,10 +265,10 @@ export default function Simulator() {
 
             <div className="max-w-xs space-y-1.5">
               <h4 className="text-sm font-bold text-white tracking-tight">
-                Visita questa pagina da telefono e prova lo scanner
+                Scan with your phone to test the scanner
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Inquadra il codice QR qui sopra con la fotocamera del tuo smartphone per aprire istantaneamente la WebApp Scanner, poi puntala verso il codice animato a sinistra.
+                Scan the QR code above with your smartphone camera to instantly launch the Web Scanner, then point it at the animated optical code on the left.
               </p>
             </div>
           </div>
@@ -280,7 +280,7 @@ export default function Simulator() {
               className="w-full py-3.5 px-4 rounded-xl bg-brand-cyan hover:bg-cyan-300 text-dark-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-950/40"
             >
               <Camera className="w-4 h-4" />
-              <span>Apri Web Scanner / Usa Webcam</span>
+              <span>Open Web Scanner / Use Webcam</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </Link>
           </div>
