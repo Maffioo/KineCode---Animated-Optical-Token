@@ -22,6 +22,8 @@ dist-demo/
 dist-ssr/
 packages/*/dist/
 web/dist/
+.next/
+landing/.next/
 *.tsbuildinfo
 
 # Environment and local settings
