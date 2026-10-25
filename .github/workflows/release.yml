@@ -2,14 +2,13 @@ name: Release & Publish to npm
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'packages/kinecode/**'
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       bump:
         description: 'Version bump type (patch, minor, major)'
-        required: false
+        required: true
         default: 'patch'
         type: choice
         options:
@@ -24,8 +23,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    # Prevent infinite loops from automated version bump commits
-    if: "!contains(github.event.head_commit.message, '[skip ci]') && !startsWith(github.event.head_commit.message, 'chore(release):')"
 
     steps:
       - name: Checkout repository
@@ -50,20 +47,14 @@ jobs:
       - name: Build production bundles
         run: npm run build
 
-      - name: Bump version, tag, and push to GitHub
+      - name: Bump version, tag, and push (Manual Dispatch only)
         id: version_bump
+        if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [ -n "${{ github.event.inputs.bump }}" ]; then
-            BUMP="${{ github.event.inputs.bump }}"
-          elif git log -1 --pretty=%B | grep -qiE "^feat(\(.*\))?:"; then
-            BUMP="minor"
-          else
-            BUMP="patch"
-          fi
-
+          BUMP="${{ github.event.inputs.bump }}"
           NEW_VERSION=$(npm version $BUMP --workspace=kinecode --no-git-tag-version | tail -n 1 | sed 's/^v//')
           npm version $NEW_VERSION --no-git-tag-version --allow-same-version
           cp README.md LICENSE packages/kinecode/
@@ -71,12 +62,21 @@ jobs:
           git commit -m "chore(release): v$NEW_VERSION [skip ci]"
           git tag "v$NEW_VERSION"
           git push origin HEAD:main --follow-tags
-          echo "new_tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=v$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Resolve release tag
+        id: resolve_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ steps.version_bump.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version_bump.outputs.new_tag }}
+          tag_name: ${{ steps.resolve_tag.outputs.tag }}
           generate_release_notes: true
 
       - name: Publish to npm

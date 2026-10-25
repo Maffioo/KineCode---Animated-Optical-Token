@@ -49,11 +49,18 @@ Thank you for your interest in contributing to KineCode!
 ## CI & Automated Releases
 
 Two GitHub Actions workflows live in `.github/workflows/`:
-1. **[`ci.yml`](.github/workflows/ci.yml):** runs `npm test` and `npm run build` for `packages/kinecode` and `web` on every push and pull request.
-2. **[`release.yml`](.github/workflows/release.yml):** on every push to `main`:
-   - bumps `packages/kinecode/package.json` (`minor` if the commit starts with `feat:`, otherwise `patch`);
-   - pushes the Git tag and creates a GitHub Release with auto-generated notes;
-   - publishes `packages/kinecode` to npm if the `NPM_TOKEN` repository secret is set (*Settings → Secrets and variables → Actions*).
+
+1. **[`ci.yml`](.github/workflows/ci.yml) (Continuous Integration):**
+   - Triggers automatically on every push to `main` and on pull requests.
+   - Runs `npm test` (Vitest) and `npm run build` to verify type-checking and bundle compilation.
+   - Ensures routine development and documentation commits do not trigger unwanted releases.
+
+2. **[`release.yml`](.github/workflows/release.yml) (Release & npm Publish):**
+   - Decoupled from routine branch pushes to prevent spurious builds and failing releases.
+   - Can be triggered via two methods:
+     - **Method A — Git Tag Push:** Tagging a release commit (e.g., `git tag v1.0.1 && git push origin v1.0.1`) triggers testing, bundle creation, a GitHub Release with auto-generated release notes, and publication to npm.
+     - **Method B — GitHub Actions UI (`workflow_dispatch`):** Go to *Actions → "Release & Publish to npm" → Run workflow*, select the bump type (`patch`, `minor`, `major`). The action will automatically bump `package.json`, commit, tag, and publish.
+   - **Prerequisites for npm:** Add your npm automation token as a repository secret named `NPM_TOKEN` under *Settings → Secrets and variables → Actions*. If omitted, the workflow will still create the Git tag and GitHub Release without failing.
 
 ## Engineering Directives
 

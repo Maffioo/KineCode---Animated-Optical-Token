@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Refactored root `README.md` and `packages/kinecode/README.md` to serve as clean, high-signal developer hubs with elevator pitch, 4-step ASCII architecture diagram, 10-line quickstart, and direct links to the official site and interactive documentation, avoiding duplicated maintenance.
 
 ### Fixed
+- **GitHub Actions Release Trigger Duplication & Permissions Error**:
+  - Decoupled `release.yml` from regular branch pushes to `main`. Routine code or documentation commits no longer trigger automated releases, eliminating duplicate workflow execution and permission errors (`git push origin HEAD:main`).
+  - Corrected `release.yml` to trigger exclusively on Git release tags (`v*`) or intentional manual dispatch (`workflow_dispatch`).
 - **API Signature Parity in Website Documentation**:
   - Corrected `verifySignedUrl(signedUrl, secretKey, options)` call signature in `landing/components/CodeTabs.tsx`, `landing/app/docs/quickstart/page.tsx`, and `landing/app/docs/api/page.tsx` (previously mismatched as a single options object).
 
