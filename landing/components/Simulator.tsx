@@ -43,7 +43,7 @@ export default function Simulator() {
       },
     })
       .then(setScannerQrDataUrl)
-      .catch((err) => console.error('Failed to generate scanner QR:', err));
+      .catch((err: unknown) => console.error('Failed to generate scanner QR:', err));
   }, []);
 
   // Initialize and run KineCode Generator
