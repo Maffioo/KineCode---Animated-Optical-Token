@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Streamlined Developer Hub README**:
   - Refactored root `README.md` and `packages/kinecode/README.md` to serve as clean, high-signal developer hubs with elevator pitch, 4-step ASCII architecture diagram, 10-line quickstart, and direct links to the official site and interactive documentation, avoiding duplicated maintenance.
 
+### Changed
+- **Decoupled Landing Page as Standalone App**:
+  - Removed `landing` from root monorepo `workspaces` in [`package.json`](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/package.json), making it an independent standalone project with its own isolated `package-lock.json` (consistent with `mobile`).
+  - Switched `landing/package.json` dependency from workspace wildcard `"kinecode": "*"` to official published registry package `"kinecode": "^0.1.0"`.
+  - Allowed `landing` to build cleanly anywhere without needing local monorepo compilations or workspace symlinks.
+
 ### Fixed
 - **GitHub Actions Release Trigger Duplication & Permissions Error**:
   - Decoupled `release.yml` from regular branch pushes to `main`. Routine code or documentation commits no longer trigger automated releases, eliminating duplicate workflow execution and permission errors (`git push origin HEAD:main`).

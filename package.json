@@ -10,18 +10,17 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "web",
-    "landing"
+    "web"
   ],
   "scripts": {
     "dev": "npm --workspace=web run dev",
     "dev:https": "npm --workspace=web run dev:https",
-    "landing:dev": "npm --workspace=landing run dev",
-    "landing:build": "npm --workspace=landing run build",
-    "build": "npm --workspace=kinecode run build && npm --workspace=web run build && npm --workspace=landing run build",
+    "landing:dev": "npm --prefix landing run dev",
+    "landing:build": "npm --prefix landing run build",
+    "build": "npm --workspace=kinecode run build && npm --workspace=web run build && npm --prefix landing run build",
     "build:lib": "npm --workspace=kinecode run build",
     "build:web": "npm --workspace=web run build",
-    "build:landing": "npm --workspace=landing run build",
+    "build:landing": "npm --prefix landing run build",
     "preview": "npm --workspace=web run preview",
     "test": "npm --workspace=kinecode run test",
     "test:watch": "npm --workspace=kinecode run test:watch",
