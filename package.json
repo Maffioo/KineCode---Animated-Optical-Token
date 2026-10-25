@@ -9,15 +9,16 @@
   },
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "landing"
   ],
   "scripts": {
-    "dev": "npm --prefix landing run dev",
-    "landing:dev": "npm --prefix landing run dev",
-    "landing:build": "npm --prefix landing run build",
-    "build": "npm --workspace=kinecode run build && npm --prefix landing run build",
+    "dev": "npm --workspace=landing run dev",
+    "landing:dev": "npm --workspace=landing run dev",
+    "landing:build": "npm --workspace=landing run build",
+    "build": "npm --workspace=kinecode run build && npm --workspace=landing run build",
     "build:lib": "npm --workspace=kinecode run build",
-    "build:landing": "npm --prefix landing run build",
+    "build:landing": "npm --workspace=landing run build",
     "test": "npm --workspace=kinecode run test",
     "test:watch": "npm --workspace=kinecode run test:watch",
     "mobile:start": "npm --prefix mobile start",

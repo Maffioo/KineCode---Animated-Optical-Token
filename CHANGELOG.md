@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0] - 2026-10-25
 
+### Fixed
+- **CI Build & Monorepo Workspaces Alignment**:
+  - Restored `landing` to root monorepo `workspaces` in [`package.json`](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/package.json) and set `"kinecode": "*"` in [`landing/package.json`](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/landing/package.json), removing isolated `landing/package-lock.json`.
+  - Fixes GitHub Actions CI failures (`CI — Build & Test` #6 and #7) where `npm run build` failed due to missing `landing/node_modules` on fresh checkouts and unresolved dependency on unreleased registry package `kinecode@^0.2.0`.
+
 ### Changed
 - **SemVer Minor Version Bump (0.2.0)**: Breaking changes in public API due to the complete removal of the visual skin subsystem from `<kine-code>` and `Generator`.
 - **Unified QR Core Rendering**: Direct high-contrast ISO/IEC 18004 Version 1 QR renderer (`renderQrFrame`) replaces legacy skin dispatch paths.
@@ -64,10 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Landing Simulator Internationalization (English Localization)**:
   - Translated all remaining Italian UI copy in `landing/components/Simulator.tsx` to English ("Scan with your phone to test the scanner", "Open Web Scanner / Use Webcam", instructions, and image alt attributes) ensuring 100% English consistency across the landing showcase.
-- **Decoupled Landing Page as Standalone App**:
-  - Removed `landing` from root monorepo `workspaces` in [`package.json`](file:///c:/Progetti/KineCode%20-%20Animated%20Optical%20Token/package.json), making it an independent standalone project with its own isolated `package-lock.json` (consistent with `mobile`).
-  - Switched `landing/package.json` dependency from workspace wildcard `"kinecode": "*"` to official published registry package `"kinecode": "^0.1.0"`.
-  - Allowed `landing` to build cleanly anywhere without needing local monorepo compilations or workspace symlinks.
 
 ### Fixed
 - **GitHub Actions Release Trigger Duplication & Permissions Error**:
