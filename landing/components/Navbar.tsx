@@ -35,7 +35,7 @@ export default function Navbar() {
                 KineCode
               </span>
               <span className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0.5 rounded bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan">
-                v0.1.0
+                v0.2.0
               </span>
             </div>
           </Link>

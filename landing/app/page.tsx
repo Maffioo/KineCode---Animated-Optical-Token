@@ -54,7 +54,7 @@ export default function HomePage() {
               <span className="w-2 h-2 rounded-full bg-brand-cyan animate-pulse"></span>
               <span>Open-Source Sequential Optical Data Protocol</span>
               <span className="text-slate-600">|</span>
-              <span className="text-brand-cyan font-mono">v0.1.0</span>
+              <span className="text-brand-cyan font-mono">v0.2.0</span>
             </div>
 
             {/* Main Headline */}

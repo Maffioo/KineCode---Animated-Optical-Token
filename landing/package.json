@@ -1,6 +1,6 @@
 {
   "name": "kinecode-landing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "KineCode Public Landing Page, Interactive Documentation & Web Scanner",
   "repository": {
@@ -14,7 +14,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "kinecode": "^0.1.0",
+    "kinecode": "^0.2.0",
     "lucide-react": "^0.475.0",
     "next": "^16.4.3",
     "react": "^19.3.1",

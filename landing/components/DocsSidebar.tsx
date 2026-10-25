@@ -130,7 +130,7 @@ export default function DocsSidebar({
       <div className="pt-6 border-t border-dark-850 px-2 text-[11px] text-slate-500 font-mono flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald"></span>
-          <span>v0.1.0 Core</span>
+          <span>v0.2.0 Core</span>
         </div>
         <span className="text-slate-400">MIT Open Source</span>
       </div>

@@ -28,7 +28,7 @@ export default function DocsOverviewPage() {
             <span className="text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan font-bold">
               Core Concept
             </span>
-            <span className="text-slate-500 text-xs font-mono">v0.1.0</span>
+            <span className="text-slate-500 text-xs font-mono">v0.2.0</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
             Introduction to KineCode

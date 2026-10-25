@@ -32,7 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - **Vanilla JS / TS**: Standard programmatic `Generator` instantiation with start/stop methods.
     - **Vue 3**: Composition API `<script setup>` with reactive canvas binding.
     - **Scanner Output**: Preview of decoded signed URL and webhook JSON payload dispatched upon token unlock.
-  - Interactive parameter controls for destination URL, frame counts (4, 6, 8, 12), frame rate (2, 4, 6, 8 FPS), expiration window (4, 6, 10, 20s), post-handshake action mode (`redirect`, `webhook`, `both`), visual skins (`fluid-wave`, `radial-equalizer`, `sonar-ripple`, `none`), random cryptographic key generator, and anti-photo replay cycle rotation toggle.
+  - Interactive parameter controls for destination URL, frame counts (4, 6, 8, 12), frame rate (2, 4, 6, 8 FPS), expiration window (4, 6, 10, 20s), post-handshake action mode (`redirect`, `webhook`, `both`), random cryptographic key generator, and anti-photo replay cycle rotation toggle.
+  - Formatted in a clean single-column stacked layout with centered live canvas preview and full-width code export tabs.
+  - Added explicit security warning highlighting that symmetric secret keys must never be exposed in public client-side code.
 
 ### Changed
 - **Documentation Table of Contents Padding**:

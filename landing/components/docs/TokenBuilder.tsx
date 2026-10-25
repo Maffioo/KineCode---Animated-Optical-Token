@@ -5,17 +5,17 @@ import {
   Copy,
   Check,
   RefreshCw,
-  Sparkles,
   Settings2,
   Code2,
   Layers,
   Globe,
   Clock,
   ShieldCheck,
+  ShieldAlert,
   Eye,
   Key,
 } from 'lucide-react';
-import { Generator, fromHex, generateKeyPair, type ActionMode, type VisualSkinType } from 'kinecode';
+import { Generator, fromHex, generateKeyPair, type ActionMode } from 'kinecode';
 
 type FrameworkTab = 'html' | 'react' | 'vanilla' | 'vue' | 'output';
 
@@ -26,7 +26,6 @@ export default function TokenBuilder() {
   const [fps, setFps] = useState<number>(4);
   const [maxAge, setMaxAge] = useState<number>(6);
   const [actionMode, setActionMode] = useState<ActionMode>('redirect');
-  const [skin, setSkin] = useState<VisualSkinType>('fluid-wave');
   const [sessionId, setSessionId] = useState<string>('0xCAFE1234');
   const [secretKey, setSecretKey] = useState<string>(
     '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20'
@@ -69,7 +68,6 @@ export default function TokenBuilder() {
         rotateEveryCycle,
         sessionId: sessionNum,
         secretKey: keyBytes,
-        skin,
         size: 260,
       });
 
@@ -90,7 +88,7 @@ export default function TokenBuilder() {
     } catch (e) {
       console.error('Failed to run TokenBuilder generator:', e);
     }
-  }, [url, frames, fps, maxAge, actionMode, skin, sessionId, secretKey, rotateEveryCycle]);
+  }, [url, frames, fps, maxAge, actionMode, sessionId, secretKey, rotateEveryCycle]);
 
   // Handle Random Key Generation
   const handleGenerateKey = async () => {
@@ -116,14 +114,14 @@ export default function TokenBuilder() {
     }
   };
 
-  // Generate code snippets
+  // Generate code snippets without skins
   const getCodeSnippet = (): string => {
     switch (activeTab) {
       case 'html':
         return `<!-- 1. Load KineCode Web Components Bundle (Zero-config) -->
 <script type="module" src="https://cdn.jsdelivr.net/npm/kinecode/dist/kinecode.js"></script>
 
-<!-- 2. Self-animating, hardware-accelerated optical token -->
+<!-- 2. Self-animating optical token -->
 <kine-code
   url="${url}"
   frames="${frames}"
@@ -131,7 +129,6 @@ export default function TokenBuilder() {
   max-age="${maxAge}"
   action-mode="${actionMode}"
   session-id="${sessionId}"
-  skin="${skin}"
   rotate-every-cycle="${rotateEveryCycle}"
   size="320"
 ></kine-code>`;
@@ -156,7 +153,6 @@ export function KineCodePresenter() {
       maxAge: ${maxAge},
       actionMode: '${actionMode}',
       sessionId: '${sessionId}',
-      skin: '${skin}',
       rotateEveryCycle: ${rotateEveryCycle},
       size: 320,
     });
@@ -192,7 +188,6 @@ const generator = new Generator({
   maxAge: ${maxAge},
   actionMode: '${actionMode}',
   sessionId: '${sessionId}',
-  skin: '${skin}',
   rotateEveryCycle: ${rotateEveryCycle},
   size: 320,
 });
@@ -200,7 +195,7 @@ const generator = new Generator({
 // Start cyclic optical transmission
 generator.start();
 
-// Lifecycle methods available:
+// Lifecycle methods:
 // generator.stop();
 // generator.refreshPayloadSync();
 // const signedUrl = generator.getSignedUrl();`;
@@ -224,7 +219,6 @@ onMounted(() => {
     maxAge: ${maxAge},
     actionMode: '${actionMode}',
     sessionId: '${sessionId}',
-    skin: '${skin}',
     rotateEveryCycle: ${rotateEveryCycle},
     size: 320,
   });
@@ -239,7 +233,7 @@ onUnmounted(() => {
 
 <template>
   <div class="kinecode-container">
-    <canvas ref="canvasRef" width={320} height={320} />
+    <canvas ref="canvasRef" width="320" height="320" />
   </div>
 </template>`;
 
@@ -300,7 +294,7 @@ Destination: ${url}`;
               </span>
             </h3>
             <p className="text-xs text-slate-400">
-              Customize parameters in real time and copy copy-pasteable snippets for your framework.
+              Customize parameters, preview the live optical token, and export code ready for your stack.
             </p>
           </div>
         </div>
@@ -315,10 +309,10 @@ Destination: ${url}`;
         </button>
       </div>
 
-      {/* Main Grid: Controls Left + Preview & Output Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-dark-800">
-        {/* Left Column: Configuration Controls (7 cols) */}
-        <div className="lg:col-span-7 p-6 space-y-5">
+      {/* Stacked Single-Column Content Flow */}
+      <div className="divide-y divide-dark-800">
+        {/* SECTION 1: Configuration Form */}
+        <div className="p-6 space-y-5">
           {/* 1. Destination URL */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
@@ -348,7 +342,7 @@ Destination: ${url}`;
                 Cycle: ~{cycleSeconds}s
               </span>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { count: 4, label: 'Fast' },
                 { count: 6, label: 'Balanced' },
@@ -362,7 +356,7 @@ Destination: ${url}`;
                     key={item.count}
                     type="button"
                     onClick={() => setFrames(item.count)}
-                    className={`py-2 px-1 rounded-lg border text-center transition-all ${
+                    className={`py-2 px-2 rounded-lg border text-center transition-all ${
                       isActive
                         ? 'bg-brand-cyan/15 border-brand-cyan text-brand-cyan font-bold shadow-sm shadow-cyan-950/40'
                         : 'bg-dark-850 border-dark-750 text-slate-400 hover:text-slate-200 hover:border-dark-700'
@@ -378,48 +372,28 @@ Destination: ${url}`;
             </div>
           </div>
 
-          {/* 3. Action Mode & Visual Skin */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* 3. Action Mode, Frame Rate (FPS), and Max Age Window */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-brand-cyan" />
-                <span>3. Post-Handshake Action</span>
+                <span>3. Action Mode</span>
               </label>
               <select
                 value={actionMode}
                 onChange={(e) => setActionMode(e.target.value as ActionMode)}
                 className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-750 text-xs text-slate-200 focus:outline-none focus:border-brand-cyan transition-colors"
               >
-                <option value="redirect">Redirect (Open Signed URL)</option>
-                <option value="webhook">Webhook POST (Background API)</option>
-                <option value="both">Both (Webhook + Redirect)</option>
+                <option value="redirect">Redirect (Open URL)</option>
+                <option value="webhook">Webhook POST (API)</option>
+                <option value="both">Both (Webhook + URL)</option>
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-brand-cyan" />
-                <span>4. Ambient Skin</span>
-              </label>
-              <select
-                value={skin}
-                onChange={(e) => setSkin(e.target.value as VisualSkinType)}
-                className="w-full px-3 py-2 rounded-lg bg-dark-850 border border-dark-750 text-xs text-slate-200 focus:outline-none focus:border-brand-cyan transition-colors"
-              >
-                <option value="fluid-wave">Fluid Wave (Recommended)</option>
-                <option value="radial-equalizer">Radial Equalizer</option>
-                <option value="sonar-ripple">Sonar Ripple</option>
-                <option value="none">None (Clean Minimalist)</option>
-              </select>
-            </div>
-          </div>
-
-          {/* 4. Frame Rate (FPS) & Max Age Window */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-cyan" />
-                <span>5. Frame Rate (FPS)</span>
+                <span>4. Frame Rate (FPS)</span>
               </label>
               <select
                 value={fps}
@@ -436,7 +410,7 @@ Destination: ${url}`;
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-brand-cyan" />
-                <span>6. Expiration (Anti-Video)</span>
+                <span>5. Expiration (Anti-Video)</span>
               </label>
               <select
                 value={maxAge}
@@ -451,7 +425,7 @@ Destination: ${url}`;
             </div>
           </div>
 
-          {/* 5. Session ID & Secret Key */}
+          {/* 4. Session ID & Secret Key */}
           <div className="space-y-3 pt-2 border-t border-dark-800">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-1 space-y-1">
@@ -500,77 +474,96 @@ Destination: ${url}`;
                 Regenerate fresh XOR Nonce every cycle (Anti-Photo Replay)
               </span>
             </label>
+
+            {/* Security Warning Notice */}
+            <div className="rounded-xl p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex gap-3 items-start mt-3">
+              <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-semibold text-amber-300 text-xs">
+                  Security Warning: Never Expose Secret Keys in Public Client Code
+                </div>
+                <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                  The secret key calculates HMAC or Ed25519 signatures to guarantee token authenticity. If embedded in public client-side JavaScript or HTML, any user can inspect the source code and forge valid tokens. In production:
+                </p>
+                <ul className="list-disc list-inside text-[11px] text-amber-200/80 space-y-0.5 pl-1">
+                  <li>Mount the generator on authenticated screens only (teacher, admin, or presenter dashboards).</li>
+                  <li>Or sign the payloads on your backend API and transmit only the pre-signed frame envelopes to the client.</li>
+                  <li>Or use asymmetric Ed25519 keys where attendees/scanners only know the Public Key.</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Live Animated Preview & Export Code Tabs (5 cols) */}
-        <div className="lg:col-span-5 p-6 flex flex-col justify-between space-y-5 bg-dark-950/40">
-          {/* Live Preview Display */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5 text-brand-cyan" />
-                <span>Live Optical Preview</span>
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30">
-                Frame {currentFrameIdx + 1}/{frames} • Nonce: 0x
-                {cycleNonce.toString(16).padStart(2, '0').toUpperCase()}
-              </span>
-            </div>
-
-            {/* Animated Canvas */}
-            <div className="relative aspect-square max-w-[260px] mx-auto w-full bg-black rounded-2xl overflow-hidden border border-dark-700 flex items-center justify-center shadow-xl">
-              <canvas ref={canvasRef} width={260} height={260} className="w-full h-full object-contain" />
-            </div>
+        {/* SECTION 2: Centered Live Optical Preview */}
+        <div className="p-6 bg-dark-950/40 flex flex-col items-center justify-center space-y-3">
+          <div className="w-full flex items-center justify-between max-w-sm">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5 text-brand-cyan" />
+              <span>Live Optical Preview</span>
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-cyan/15 text-brand-cyan border border-brand-cyan/30">
+              Frame {currentFrameIdx + 1}/{frames} • Nonce: 0x
+              {cycleNonce.toString(16).padStart(2, '0').toUpperCase()}
+            </span>
           </div>
 
-          {/* Export Snippet Tabs */}
-          <div className="space-y-2 pt-2 border-t border-dark-800">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Code2 className="w-3.5 h-3.5 text-brand-cyan" />
-                <span>Export Code</span>
-              </span>
+          {/* Animated Canvas */}
+          <div className="relative aspect-square w-64 h-64 bg-black rounded-2xl overflow-hidden border border-dark-700 flex items-center justify-center shadow-2xl">
+            <canvas ref={canvasRef} width={260} height={260} className="w-full h-full object-contain" />
+          </div>
+
+          <p className="text-[11px] font-mono text-slate-500">
+            {frames} Frames • {fps} FPS • Full cycle: ~{cycleSeconds}s
+          </p>
+        </div>
+
+        {/* SECTION 3: Full-Width Export Code */}
+        <div className="p-6 space-y-3 bg-dark-950/60">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <Code2 className="w-3.5 h-3.5 text-brand-cyan" />
+              <span>Export Ready-to-Use Code</span>
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-cyan text-dark-950 hover:bg-brand-cyan/90 font-bold text-xs transition-colors shadow-sm"
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'Copied to Clipboard!' : 'Copy Snippet'}</span>
+            </button>
+          </div>
+
+          {/* Framework Selector Tabs */}
+          <div className="flex flex-wrap gap-1 p-1 rounded-lg bg-dark-850 border border-dark-800 text-xs font-mono">
+            {[
+              { id: 'html', label: 'HTML / CDN' },
+              { id: 'react', label: 'React / Next.js' },
+              { id: 'vanilla', label: 'Vanilla JS/TS' },
+              { id: 'vue', label: 'Vue 3' },
+              { id: 'output', label: 'Scanner Decoded Output' },
+            ].map((tab) => (
               <button
+                key={tab.id}
                 type="button"
-                onClick={handleCopyCode}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-brand-cyan text-dark-950 hover:bg-brand-cyan/90 font-bold text-xs transition-colors shadow-sm"
+                onClick={() => setActiveTab(tab.id as FrameworkTab)}
+                className={`px-3 py-1.5 rounded transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-brand-cyan/20 text-brand-cyan font-bold border border-brand-cyan/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
               >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+                {tab.label}
               </button>
-            </div>
+            ))}
+          </div>
 
-            {/* Framework Selector Tabs */}
-            <div className="flex flex-wrap gap-1 p-1 rounded-lg bg-dark-850 border border-dark-800 text-[11px] font-mono">
-              {[
-                { id: 'html', label: 'HTML / CDN' },
-                { id: 'react', label: 'React / Next' },
-                { id: 'vanilla', label: 'Vanilla JS/TS' },
-                { id: 'vue', label: 'Vue 3' },
-                { id: 'output', label: 'Scanner Output' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id as FrameworkTab)}
-                  className={`px-2.5 py-1 rounded transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-brand-cyan/20 text-brand-cyan font-bold border border-brand-cyan/30'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Code Output Area */}
-            <div className="relative">
-              <pre className="p-3.5 rounded-xl bg-dark-950 border border-dark-800 text-slate-300 font-mono text-[11px] leading-relaxed overflow-x-auto max-h-56 select-all whitespace-pre-wrap">
-                {getCodeSnippet()}
-              </pre>
-            </div>
+          {/* Code Output Area */}
+          <div className="relative">
+            <pre className="p-4 rounded-xl bg-dark-950 border border-dark-800 text-slate-300 font-mono text-xs leading-relaxed overflow-x-auto max-h-72 select-all whitespace-pre-wrap">
+              {getCodeSnippet()}
+            </pre>
           </div>
         </div>
       </div>
