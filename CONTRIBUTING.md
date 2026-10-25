@@ -12,7 +12,7 @@ Thank you for your interest in contributing to KineCode!
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/kinecode.git
+   git clone https://github.com/Maffioo/kinecode.git
    cd kinecode
    ```
 

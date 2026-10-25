@@ -32,6 +32,14 @@
   ],
   "author": "KineCode Contributors",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Maffioo/kinecode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Maffioo/kinecode/issues"
+  },
+  "homepage": "https://github.com/Maffioo/kinecode#readme",
   "scripts": {
     "build": "tsc && vite build && tsc -p tsconfig.build.json",
     "prepublishOnly": "npm test && npm run build",

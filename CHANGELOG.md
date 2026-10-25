@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Showcase Documentation Audit & Completeness (`landing/app/docs/`)**:
+  - Added the **Frames × FPS Burst Window Timing Matrix** to `/docs/api`, detailing burst windows (`max(3000, N × 450) ms`) and supported frame-rate combinations.
+  - Added the complete **Scanner Webhook JSON Payload Schema** and zero-trust verification notes to `/docs/api`.
+  - Added the **Single-Use Token Replay Defense** section to `/docs/security`, documenting backend database binding and `kc_sig` deduplication patterns.
+
+### Changed
+- **Protocol Scope & Positioning Realignment**:
+  - Shifted narrative across `landing/app/page.tsx`, `landing/app/docs/page.tsx`, root `README.md`, and `packages/kinecode/README.md` from a narrow "Proof-of-Presence only" framing to a generalized **Sequential Optical Data Protocol for Unclonable Signed Links & Payloads**.
+  - Balanced real-world use cases on the showcase homepage and documentation: Proof-of-Presence & attendance (flagship), air-gapped zero-pairing link transfer, anti-scalping dynamic tickets, and offline visual 2FA / POS authorization.
+- **Streamlined Developer Hub README**:
+  - Refactored root `README.md` and `packages/kinecode/README.md` to serve as clean, high-signal developer hubs with elevator pitch, 4-step ASCII architecture diagram, 10-line quickstart, and direct links to the official site and interactive documentation, avoiding duplicated maintenance.
+
+### Fixed
+- **API Signature Parity in Website Documentation**:
+  - Corrected `verifySignedUrl(signedUrl, secretKey, options)` call signature in `landing/components/CodeTabs.tsx`, `landing/app/docs/quickstart/page.tsx`, and `landing/app/docs/api/page.tsx` (previously mismatched as a single options object).
+
+### Added
+- **Modern Documentation Component Suite (`landing/components/docs/`)**:
+  - `DocsSearchModal`: Instant client-side search dialog activated with `⌘K` or `Ctrl+K`, indexing all doc pages, headings, method names, protocol parameters, and security concepts with keyboard navigation (`↑`, `↓`, `Enter`, `Esc`).
+  - `DocsTableOfContents`: Sticky right sidebar ("On this page") featuring scrollspy heading tracking, smooth anchor navigation, "Edit on GitHub", and "Report an issue" links.
+  - `DocsBreadcrumbs`: Accessible breadcrumb trails at the top of each article.
+  - `DocsPagination`: Sequential chapter navigation cards linking preceding and subsequent documentation topics.
+  - `Callout`: Polished admonitions (`info`, `tip`, `warning`, `security`, `danger`) with distinct icons, borders, and ambient glow.
+  - `CodeBlock`: Syntax-styled code container with file name header, language badge, and instant copy-to-clipboard feedback.
+  - `ParamTable`: Responsive parameters table with badges for parameter types, default values, and required indicators.
+  - `Steps` & `Step`: Sequentially numbered step containers for structured walkthroughs.
+
+### Changed
+- **Official Repository Link Sync**:
+  - Updated all GitHub URLs across `landing/components/Navbar.tsx`, `landing/app/docs/layout.tsx`, `landing/app/page.tsx`, `CONTRIBUTING.md`, root `package.json`, `landing/package.json`, and `packages/kinecode/package.json` to `https://github.com/Maffioo/kinecode`.
+- **Streamlined Landing Page Header (`landing/components/Navbar.tsx`)**:
+  - Removed duplicate "Web Scanner" link from desktop navigation (`Overview`, `Live Simulator`, `How It Works`, `Docs`).
+  - Preserved a single, prominent "Web Scanner" CTA button on the right side of the navbar.
+  - Removed redundant scanner button next to hamburger in mobile view for a clean layout.
+- **Documentation Deep Dive & Reorganization (`landing/app/docs/`)**:
+  - Reorganized all docs routes with consistent 3-column responsive layout (Sidebar, Main Article, Table of Contents).
+  - Documented Generator skins (`fluid-wave`, `radial-equalizer`, `sonar-ripple`), `AntiStreamDetector`, `CornerDetector`, `<kine-code>`, `<kine-scanner>`, and `verifySignedUrl`.
+
+### Fixed
+- **Documentation Grid Layout**:
+  - Fixed a duplicated stray card element in `/docs` (Introduction) that broke the 3-column grid for optical defenses.
+
+- **Public Showcase, Interactive Docs & Web Scanner (`landing/`)**:
+  - Created a modern, Apple-grade open-source showcase web app in `landing/` powered by Next.js App Router, Tailwind CSS, and TypeScript.
+  - **Live Protocol Sandbox & Dual-Screen Simulator (`landing/components/Simulator.tsx`)**: interactive presenter screen cycling through frames alongside a streamlined Attendee Camera card with a dynamic QR code for instant smartphone handoff ("Visita questa pagina da telefono e prova lo scanner") and direct action to launch the Web Scanner.
+  - **Exact Web Twin of the Expo Mobile Scanner (`landing/app/scanner/page.tsx` & `landing/components/WebScanner.tsx`)**: full-viewport camera reticle, guidance pill, slot locking animations, haptic feedback, and verification modal directly running `kinecode`'s `FrameCollector` and `jsQR`.
+  - **Hierarchical Technical Documentation (`landing/app/docs/`)**:
+    - `/docs`: Architecture overview, optical proof-of-presence concept, and monorepo ecosystem.
+    - `/docs/quickstart`: Step-by-step developer guide for presenter, scanner, and stateless server verifier.
+    - `/docs/protocol`: Complete binary framing specification (12-char packet, byte layout, XOR cyclic mask, CRC-8 polynomial, and dynamic envelope structure).
+    - `/docs/api`: Complete TypeScript API tables for `Generator`, `Scanner`, `FrameCollector`, `verifySignedUrl`, `<kine-code>`, and `<kine-scanner>`.
+    - `/docs/security`: Detailed threat model covering photo forwarding, video replays, cross-cycle frame stitching, and clock skew tolerances.
+  - Added monorepo workspace `"landing"` with root npm scripts `landing:dev` and `landing:build`.
+
 ### Changed
 - **README rewrite** (root and `packages/kinecode`): added Quick start, How it works, Security model & limitations, webhook payload format, browser requirements (HTTPS), Development section, and the missing options (`skin`, `centerLogoUrl`, `showAntiStream`). Collapsed the Vue/Angular examples and moved the CI/release docs to `CONTRIBUTING.md`.
 
