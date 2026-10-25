@@ -21,7 +21,6 @@ dist/
 dist-demo/
 dist-ssr/
 packages/*/dist/
-web/dist/
 .next/
 landing/.next/
 *.tsbuildinfo

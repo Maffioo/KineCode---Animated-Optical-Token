@@ -2,26 +2,22 @@
   "name": "kinecode-monorepo",
   "version": "0.2.0",
   "private": true,
-  "description": "KineCode Monorepo — Protocol & SDK (packages/kinecode), Interactive Web Demo (web), Showcase Landing & Docs (landing), and Native Mobile Scanner (mobile)",
+  "description": "KineCode Monorepo — Protocol & SDK (packages/kinecode), Showcase Landing & Docs (landing), and Native Mobile Scanner (mobile)",
   "repository": {
     "type": "git",
     "url": "https://github.com/Maffioo/kinecode.git"
   },
   "type": "module",
   "workspaces": [
-    "packages/*",
-    "web"
+    "packages/*"
   ],
   "scripts": {
-    "dev": "npm --workspace=web run dev",
-    "dev:https": "npm --workspace=web run dev:https",
+    "dev": "npm --prefix landing run dev",
     "landing:dev": "npm --prefix landing run dev",
     "landing:build": "npm --prefix landing run build",
-    "build": "npm --workspace=kinecode run build && npm --workspace=web run build && npm --prefix landing run build",
+    "build": "npm --workspace=kinecode run build && npm --prefix landing run build",
     "build:lib": "npm --workspace=kinecode run build",
-    "build:web": "npm --workspace=web run build",
     "build:landing": "npm --prefix landing run build",
-    "preview": "npm --workspace=web run preview",
     "test": "npm --workspace=kinecode run test",
     "test:watch": "npm --workspace=kinecode run test:watch",
     "mobile:start": "npm --prefix mobile start",
@@ -30,7 +26,6 @@
   "devDependencies": {
     "@types/node": "^22.13.4",
     "@types/qrcode": "^1.5.6",
-    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "typescript": "^5.7.3",
     "vite": "^6.2.0",
     "vitest": "^3.0.7"

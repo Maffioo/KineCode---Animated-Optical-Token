@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "kinecode": ["../packages/kinecode/src/index.ts"]
-    }
-  },
-  "include": ["src"]
-}

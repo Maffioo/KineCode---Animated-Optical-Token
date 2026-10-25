@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed `VisualSkinType` type definition from `src/core/types.ts`.
   - Removed legacy skin renderer modules (`FluidWave.ts`, `RadialEqualizer.ts`, `SonarRipple.ts`) under `src/generator/skins/`.
   - Removed Visual Skins section, parameters, search modal index entries, and code snippet usages from `/docs/api`.
+- **Legacy Vite Web Testbench (`web/`)**:
+  - Removed deprecated `web/` directory (Vite testbench and standalone demo app), consolidated fully into the Next.js showcase web application (`landing/`).
+  - Removed `"web"` from root monorepo `workspaces` and pruned scripts `dev:https`, `build:web`, `preview`.
+  - Streamlined `npm run dev` to launch the Next.js showcase & documentation platform directly.
 
 
 ### Added

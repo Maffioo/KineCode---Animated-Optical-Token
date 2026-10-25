@@ -27,5 +27,5 @@ jobs:
       - name: Run unit tests (Vitest)
         run: npm test
 
-      - name: Build library, TypeScript declarations & Web demo
+      - name: Build library, TypeScript declarations & Showcase landing
         run: npm run build

@@ -129,10 +129,6 @@ export default function DocsOverviewPage() {
                 <span className="text-slate-200 font-bold">landing/</span>
                 <span className="text-slate-400 font-sans text-xs">Public Next.js showcase, interactive docs & Web Scanner replica</span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-dark-850">
-                <span className="text-slate-200 font-bold">web/</span>
-                <span className="text-slate-400 font-sans text-xs">Interactive developer studio & live QR test dashboard (Vite + TS)</span>
-              </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <span className="text-slate-200 font-bold">mobile/</span>
                 <span className="text-slate-400 font-sans text-xs">Cross-platform native iOS & Android scanner app (Expo / React Native)</span>

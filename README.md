@@ -141,7 +141,6 @@ app.get('/checkin', async (req, res) => {
 ```text
 ├── packages/kinecode/   # Published npm library: core protocol, framing, generator, scanner
 ├── landing/             # Next.js showcase web app, interactive simulator & full documentation
-├── web/                 # Vite testbench, QR builder & standalone camera demo
 └── mobile/              # Native Expo / React Native scanner utilizing FrameCollector
 ```
 
@@ -151,15 +150,12 @@ app.get('/checkin', async (req, res) => {
 npm install
 
 # Start Next.js Showcase & Interactive Docs
-npm run landing:dev
-
-# Start Vite testbench & QR builder
 npm run dev
 
 # Run Vitest test suite
 npm test
 
-# Build all monorepo workspaces
+# Build all production targets (SDK library & Showcase landing)
 npm run build
 ```
 
