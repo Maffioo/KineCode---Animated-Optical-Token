@@ -45,7 +45,7 @@ jobs:
         run: npm test
 
       - name: Build production bundles
-        run: npm run build
+        run: npm run build:lib
 
       - name: Bump version, tag, and push (Manual Dispatch only)
         id: version_bump
