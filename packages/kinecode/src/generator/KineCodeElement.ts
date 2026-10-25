@@ -1,5 +1,5 @@
 import { Generator } from './Generator.ts';
-import { VisualSkinType, ActionMode } from '../core/types.ts';
+import { ActionMode } from '../core/types.ts';
 import { fromHex } from '../core/crypto.ts';
 
 const SafeHTMLElement = (
@@ -57,7 +57,6 @@ export class KineCodeElement extends SafeHTMLElement {
       'secretKey',
       'secretkey',
       'secret-key',
-      'skin',
       'centerLogoUrl',
       'centerlogourl',
       'center-logo-url',
@@ -87,7 +86,6 @@ export class KineCodeElement extends SafeHTMLElement {
     const actionMode = (this.getAttr('actionMode', 'action-mode') as ActionMode) || 'redirect';
     const maxAgeSec = parseInt(this.getAttr('maxAge', 'max-age') || '6', 10);
     const rotateEveryCycle = this.getAttr('rotateEveryCycle', 'rotate-every-cycle') !== 'false';
-    const skin = (this.getAttr('skin') as VisualSkinType) || 'fluid-wave';
     const centerLogoUrl = this.getAttr('centerLogoUrl', 'center-logo-url') || undefined;
     const showAntiStream = this.getAttr('showAntiStream', 'show-anti-stream') !== 'false';
     const secretKeyHex = this.getAttr('secretKey', 'secret-key');
@@ -106,7 +104,6 @@ export class KineCodeElement extends SafeHTMLElement {
       actionMode,
       maxAge: maxAgeSec,
       rotateEveryCycle,
-      skin,
       centerLogoUrl,
       showAntiStreamRing: showAntiStream,
       secretKey: privateKey,
@@ -146,8 +143,6 @@ export class KineCodeElement extends SafeHTMLElement {
       this.generator.setMaxAgeSec(parseInt(newVal, 10) || 6);
     } else if (key === 'rotateeverycycle' || key === 'rotate-every-cycle') {
       this.generator.setRotateEveryCycle(newVal !== 'false');
-    } else if (key === 'skin' && newVal) {
-      this.generator.setSkin(newVal as VisualSkinType);
     } else if (key === 'centerlogourl' || key === 'center-logo-url') {
       this.generator.setCenterLogo(newVal || '');
     } else if (key === 'showantistream' || key === 'show-anti-stream') {

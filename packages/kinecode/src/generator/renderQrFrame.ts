@@ -1,5 +1,5 @@
-import { FrameData } from '../../core/types.ts';
-import { generateQrMatrix } from '../../core/framing.ts';
+import { FrameData } from '../core/types.ts';
+import { generateQrMatrix } from '../core/framing.ts';
 
 export interface RenderContext {
   ctx: CanvasRenderingContext2D;
@@ -14,11 +14,11 @@ export interface RenderContext {
 }
 
 /**
- * Primary Unified Renderer: Animated QR Code Sequence (Version 1 - 21x21 Big Modules).
- * Renders a high-contrast, standard ISO/IEC 18004 Version 1 QR Code with a 4-module
- * white quiet zone for instant hardware & jsQR decoding at long distances.
+ * Standard High-Contrast QR Matrix Renderer:
+ * Renders an ISO/IEC 18004 Version 1 QR Code (21x21 modules) with a 4-module
+ * white quiet zone card on a dark backdrop for instant optical camera decoding.
  */
-export function renderFluidWave(opts: RenderContext): void {
+export function renderQrFrame(opts: RenderContext): void {
   const { ctx, width, height, currentFrame } = opts;
 
   const size = Math.min(width, height);

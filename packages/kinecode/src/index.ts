@@ -10,9 +10,7 @@ export * from './core/framing.ts';
 // Generator
 export { Generator, type GeneratorOptions } from './generator/Generator.ts';
 export { KineCodeElement } from './generator/KineCodeElement.ts';
-export { renderFluidWave } from './generator/skins/FluidWave.ts';
-export { renderRadialEqualizer } from './generator/skins/RadialEqualizer.ts';
-export { renderSonarRipple } from './generator/skins/SonarRipple.ts';
+export { renderQrFrame, type RenderContext } from './generator/renderQrFrame.ts';
 
 // Scanner
 export { Scanner, type ScannerOptions, type ScannerDebugInfo } from './scanner/Scanner.ts';

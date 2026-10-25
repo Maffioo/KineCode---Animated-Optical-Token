@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-25
+
+### Changed
+- **SemVer Minor Version Bump (0.2.0)**: Breaking changes in public API due to the complete removal of the visual skin subsystem from `<kine-code>` and `Generator`.
+- **Unified QR Core Rendering**: Direct high-contrast ISO/IEC 18004 Version 1 QR renderer (`renderQrFrame`) replaces legacy skin dispatch paths.
+
+### Removed
+- **Visual Skin Subsystem**:
+  - Removed `skin` attribute from `<kine-code>` custom Web Component (`KineCodeElement`).
+  - Removed `skin` property from `GeneratorOptions` and `Generator`.
+  - Removed `setSkin()` and `getSkin()` public methods from `Generator`.
+  - Removed `VisualSkinType` type definition from `src/core/types.ts`.
+  - Removed legacy skin renderer modules (`FluidWave.ts`, `RadialEqualizer.ts`, `SonarRipple.ts`) under `src/generator/skins/`.
+  - Removed Visual Skins section, parameters, search modal index entries, and code snippet usages from `/docs/api`.
+
+
+### Added
+- **Interactive Component & Code Builder (`landing/components/docs/TokenBuilder.tsx`)**:
+  - Added an interactive visual token generator embedded directly in `/docs/quickstart` (Step 2: Presenter Screen) and `/docs/api` (Section 1: Generator).
+  - Features real-time animated optical token rendering on HTML5 canvas via `Generator`, cyclic duration calculation (`(frames / fps)s`), dynamic nonces, and instant copyable exports across multiple frameworks:
+    - **HTML / CDN**: Self-registering `<kine-code>` custom Web Component.
+    - **React / Next.js**: Client-side component with ref hook and automatic lifecycle disposal.
+    - **Vanilla JS / TS**: Standard programmatic `Generator` instantiation with start/stop methods.
+    - **Vue 3**: Composition API `<script setup>` with reactive canvas binding.
+    - **Scanner Output**: Preview of decoded signed URL and webhook JSON payload dispatched upon token unlock.
+  - Interactive parameter controls for destination URL, frame counts (4, 6, 8, 12), frame rate (2, 4, 6, 8 FPS), expiration window (4, 6, 10, 20s), post-handshake action mode (`redirect`, `webhook`, `both`), visual skins (`fluid-wave`, `radial-equalizer`, `sonar-ripple`, `none`), random cryptographic key generator, and anti-photo replay cycle rotation toggle.
+
+### Changed
+- **Documentation Table of Contents Padding**:
+  - Added generous 32px left padding (`pl-8 pr-6 w-72`) between the dividing border and the "On this page" navigation outline across all documentation pages (`/docs`, `/docs/quickstart`, `/docs/protocol`, `/docs/api`, `/docs/security`), preventing text from sticking to the border.
+
+### Removed
+- **Docs Sidebar Clutter Removal**:
+  - Removed status badges (`Critical`, `5 min`, `Spec`, `v0.1`) and `⌘K` badge from `DocsSidebar.tsx`, eliminating horizontal crowding and preventing item label truncation.
+
 ### Added
 - **Showcase Documentation Audit & Completeness (`landing/app/docs/`)**:
   - Added the **Frames × FPS Burst Window Timing Matrix** to `/docs/api`, detailing burst windows (`max(3000, N × 450) ms`) and supported frame-rate combinations.

@@ -2,7 +2,6 @@ import {
   FrameData,
   TOTAL_FRAMES,
   FRAME_INTERVAL_MS,
-  VisualSkinType,
   ActionMode
 } from '../core/types.ts';
 import {
@@ -18,9 +17,7 @@ import {
   encodeEnvelopeToFrames,
   constructSignedUrl
 } from '../core/framing.ts';
-import { renderFluidWave, RenderContext } from './skins/FluidWave.ts';
-import { renderRadialEqualizer } from './skins/RadialEqualizer.ts';
-import { renderSonarRipple } from './skins/SonarRipple.ts';
+import { renderQrFrame, RenderContext } from './renderQrFrame.ts';
 
 export interface GeneratorOptions {
   canvas: HTMLCanvasElement;
@@ -49,7 +46,6 @@ export interface GeneratorOptions {
   maxAgeSec?: number;
   privateKey?: Uint8Array;
   useHmac?: boolean;
-  skin?: VisualSkinType;
   centerLogoUrl?: string;
   showAntiStreamRing?: boolean;
 }
@@ -65,7 +61,6 @@ export class Generator {
   private actionMode: ActionMode;
   private maxAgeSec: number;
   private rotateEveryCycle: boolean;
-  private skin: VisualSkinType;
   private centerLogoImage: HTMLImageElement | null = null;
   private showAntiStreamRing: boolean = true;
 
@@ -111,7 +106,6 @@ export class Generator {
     const rawMaxAge = options.maxAge ?? options.maxAgeSec ?? 6;
     this.maxAgeSec = Math.max(2, Math.min(120, rawMaxAge));
     this.rotateEveryCycle = options.rotateEveryCycle !== false;
-    this.skin = options.skin ?? 'fluid-wave';
     this.showAntiStreamRing = options.showAntiStreamRing !== false;
     this.cycleNonce = Math.floor(Math.random() * 256);
 
@@ -243,14 +237,6 @@ export class Generator {
       this.lastSignature7,
       this.cycleNonce
     );
-  }
-
-  public setSkin(skin: VisualSkinType): void {
-    this.skin = skin;
-  }
-
-  public getSkin(): VisualSkinType {
-    return this.skin;
   }
 
   public setShowAntiStreamRing(show: boolean): void {
@@ -445,12 +431,6 @@ export class Generator {
       showAntiStreamRing: this.showAntiStreamRing
     };
 
-    if (this.skin === 'radial-equalizer') {
-      renderRadialEqualizer(renderCtx);
-    } else if (this.skin === 'sonar-ripple') {
-      renderSonarRipple(renderCtx);
-    } else {
-      renderFluidWave(renderCtx);
-    }
+    renderQrFrame(renderCtx);
   }
 }

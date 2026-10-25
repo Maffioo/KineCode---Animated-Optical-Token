@@ -235,7 +235,7 @@ export default function SecurityThreatModelPage() {
       </article>
 
       {/* Right Table of Contents */}
-      <div className="hidden xl:block w-64 shrink-0 py-10 pr-6 border-l border-dark-850 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+      <div className="hidden xl:block w-72 shrink-0 py-10 pl-8 pr-6 border-l border-dark-850 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
         <DocsTableOfContents items={TOC} githubEditPath="security/page.tsx" />
       </div>
     </div>

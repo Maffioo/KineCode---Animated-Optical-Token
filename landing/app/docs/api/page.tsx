@@ -2,25 +2,26 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Code2, Terminal, Server, Cpu, Palette, ShieldAlert } from 'lucide-react';
+import { ArrowRight, Code2, Terminal, Server, Cpu, ShieldAlert } from 'lucide-react';
 import DocsBreadcrumbs from '@/components/docs/DocsBreadcrumbs';
 import DocsTableOfContents, { TocItem } from '@/components/docs/DocsTableOfContents';
 import DocsPagination from '@/components/docs/DocsPagination';
 import Callout from '@/components/docs/Callout';
 import CodeBlock from '@/components/docs/CodeBlock';
 import ParamTable, { ParamItem } from '@/components/docs/ParamTable';
+import TokenBuilder from '@/components/docs/TokenBuilder';
 
 const TOC: TocItem[] = [
   { id: 'kine-code', title: '1. <kine-code> & Generator', level: 2 },
+  { id: 'interactive-builder', title: 'Interactive Token Builder', level: 3 },
   { id: 'generator-options', title: 'Generator Options & Props', level: 3 },
   { id: 'burst-timing', title: 'Choosing Frames × FPS', level: 3 },
-  { id: 'skins', title: '2. Visual Skins', level: 2 },
-  { id: 'kine-scanner', title: '3. <kine-scanner> & Scanner', level: 2 },
+  { id: 'kine-scanner', title: '2. <kine-scanner> & Scanner', level: 2 },
   { id: 'scanner-options', title: 'Scanner Options & Callbacks', level: 3 },
   { id: 'webhook-payload', title: 'Webhook JSON Payload', level: 3 },
-  { id: 'antistream', title: '4. AntiStreamDetector', level: 2 },
-  { id: 'verifysignedurl', title: '5. verifySignedUrl()', level: 2 },
-  { id: 'framecollector', title: '6. FrameCollector (Headless Engine)', level: 2 },
+  { id: 'antistream', title: '3. AntiStreamDetector', level: 2 },
+  { id: 'verifysignedurl', title: '4. verifySignedUrl()', level: 2 },
+  { id: 'framecollector', title: '5. FrameCollector (Headless Engine)', level: 2 },
   { id: 'next-steps', title: 'Next Steps', level: 2 },
 ];
 
@@ -72,12 +73,6 @@ const GENERATOR_PARAMS: ParamItem[] = [
     type: 'boolean',
     default: 'true',
     description: 'Regenerates a fresh nonce, timestamp, and HMAC signature on every cycle loop.',
-  },
-  {
-    name: 'skin',
-    type: "'none' | 'fluid-wave' | 'radial-equalizer' | 'sonar-ripple'",
-    default: "'fluid-wave'",
-    description: 'Decorative hardware-accelerated ambient animation around the optical QR core.',
   },
   {
     name: 'size',
@@ -178,7 +173,7 @@ export default function ApiReferencePage() {
             SDK &amp; Web Components API
           </h1>
           <p className="text-base text-slate-400 leading-relaxed">
-            Full reference documentation for KineCode classes, Web Components, options, callbacks, skins, and headless engines.
+            Full reference documentation for KineCode classes, Web Components, options, callbacks, and headless engines.
           </p>
         </header>
 
@@ -203,10 +198,23 @@ export default function ApiReferencePage() {
   fps="4"
   max-age="6"
   session-id="0xCAFE1234"
-  skin="fluid-wave"
   size="320"
 ></kine-code>`}
           />
+
+          {/* Interactive Builder */}
+          <div id="interactive-builder" className="pt-4 space-y-3 scroll-mt-24">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-white">Interactive Token Builder</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan">
+                Live Studio
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Tune parameters interactively, watch the dynamic token animate in real-time, and export production-ready code for Web Components, React, Vanilla JS, or Vue.
+            </p>
+            <TokenBuilder />
+          </div>
 
           <div id="generator-options" className="scroll-mt-24">
             <ParamTable
@@ -283,43 +291,11 @@ export default function ApiReferencePage() {
           </div>
         </section>
 
-        {/* 2. Skins */}
-        <section id="skins" className="space-y-4 scroll-mt-24 mt-12">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <Palette className="w-5 h-5 text-brand-cyan" />
-            <span>2. Visual Skins</span>
-          </h2>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            KineCode features built-in canvas skin renderers that draw hardware-accelerated ambient visuals around the QR code without obstructing optical finder patterns:
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div className="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
-              <code className="text-xs font-mono text-brand-cyan font-bold">fluid-wave</code>
-              <p className="text-xs text-slate-400">
-                Smooth organic fluid waves undulating with cyclic frame progression and glow.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
-              <code className="text-xs font-mono text-brand-cyan font-bold">radial-equalizer</code>
-              <p className="text-xs text-slate-400">
-                Pulsing circular audio-style frequency bars synchronized to frame ticks.
-              </p>
-            </div>
-            <div className="p-4 rounded-xl bg-dark-900 border border-dark-800 space-y-1">
-              <code className="text-xs font-mono text-brand-cyan font-bold">sonar-ripple</code>
-              <p className="text-xs text-slate-400">
-                Concentric radar ripples expanding outward as frames rotate.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Scanner */}
+        {/* 2. Scanner */}
         <section id="kine-scanner" className="space-y-4 scroll-mt-24 mt-12">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             <Terminal className="w-5 h-5 text-brand-cyan" />
-            <span>3. &lt;kine-scanner&gt; &amp; Scanner</span>
+            <span>2. &lt;kine-scanner&gt; &amp; Scanner</span>
           </h2>
           <p className="text-sm text-slate-300 leading-relaxed">
             The scanner module streams video frames from the attendee camera, tracks the rotating token with reticle guidance, and reconstructs the Dynamic Envelope.
@@ -388,11 +364,11 @@ await scanner.start();`}
           </div>
         </section>
 
-        {/* 4. AntiStream */}
+        {/* 3. AntiStream */}
         <section id="antistream" className="space-y-4 scroll-mt-24 mt-12">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-brand-rose" />
-            <span>4. AntiStreamDetector</span>
+            <span>3. AntiStreamDetector</span>
           </h2>
           <p className="text-sm text-slate-300 leading-relaxed">
             The <code>AntiStreamDetector</code> analyzes image frames for high-frequency moir&eacute; interference patterns and screen raster lines created when an attacker films a secondary computer or TV monitor:
@@ -416,11 +392,11 @@ if (assessment.isRebroadcast) {
           />
         </section>
 
-        {/* 5. verifySignedUrl */}
+        {/* 4. verifySignedUrl */}
         <section id="verifysignedurl" className="space-y-4 scroll-mt-24 mt-12">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             <Server className="w-5 h-5 text-brand-cyan" />
-            <span>5. verifySignedUrl(signedUrl, secretKey, options?)</span>
+            <span>4. verifySignedUrl(signedUrl, secretKey, options?)</span>
           </h2>
           <p className="text-sm text-slate-300 leading-relaxed">
             Stateless backend function to verify cryptographic sequential optical tokens in Node.js, Next.js, Express, Fastify, Bun, or Cloudflare Workers:
@@ -460,11 +436,11 @@ console.log('Verified authentic session:', result.sessionId);`}
           </Callout>
         </section>
 
-        {/* 6. FrameCollector */}
+        {/* 5. FrameCollector */}
         <section id="framecollector" className="space-y-4 scroll-mt-24 mt-12">
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             <Cpu className="w-5 h-5 text-brand-cyan" />
-            <span>6. FrameCollector (Headless Engine)</span>
+            <span>5. FrameCollector (Headless Engine)</span>
           </h2>
           <p className="text-sm text-slate-300 leading-relaxed">
             A pure headless state machine with zero DOM or canvas dependencies, tailored for custom native mobile apps (React Native, Flutter, Swift, Kotlin):
@@ -505,7 +481,7 @@ if (step.status === 'verified') {
       </article>
 
       {/* Right Table of Contents */}
-      <div className="hidden xl:block w-64 shrink-0 py-10 pr-6 border-l border-dark-850 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+      <div className="hidden xl:block w-72 shrink-0 py-10 pl-8 pr-6 border-l border-dark-850 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
         <DocsTableOfContents items={TOC} githubEditPath="api/page.tsx" />
       </div>
     </div>

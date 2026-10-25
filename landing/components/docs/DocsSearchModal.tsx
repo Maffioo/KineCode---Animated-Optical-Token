@@ -114,21 +114,14 @@ const SEARCH_INDEX: SearchEntry[] = [
   {
     title: 'Generator & <kine-code> Component',
     category: 'API Reference',
-    href: '/docs/api#generator',
+    href: '/docs/api#kine-code',
     keywords: ['generator', 'kine-code', 'url', 'frames', 'fps', 'max-age', 'session-id', 'secret-key', 'size'],
     description: 'Presenter options, reactive attributes, lifecycle methods, and event bindings.',
   },
   {
-    title: 'Visual Skins (FluidWave, RadialEqualizer, SonarRipple)',
-    category: 'API Reference',
-    href: '/docs/api#skins',
-    keywords: ['skins', 'fluid-wave', 'radial-equalizer', 'sonar-ripple', 'canvas', 'effects', 'themes'],
-    description: 'Dynamic canvas skins that render pulsing audio-visualizer or wave effects around the QR code.',
-  },
-  {
     title: 'Scanner & <kine-scanner> Component',
     category: 'API Reference',
-    href: '/docs/api#scanner',
+    href: '/docs/api#kine-scanner',
     keywords: ['scanner', 'kine-scanner', 'overlayCanvas', 'onValidScan', 'onProgress', 'homography'],
     description: 'Camera scanner options, reticle guidance, and burst lock parameters.',
   },
@@ -292,7 +285,7 @@ export default function DocsSearchModal({
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Search docs, APIs, specs, security (e.g. verifySignedUrl, skins, CRC8)..."
+            placeholder="Search docs, APIs, specs, security (e.g. verifySignedUrl, HMAC, CRC8)..."
             className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none"
           />
           {query ? (

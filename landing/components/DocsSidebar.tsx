@@ -28,25 +28,25 @@ export const DOCS_SECTIONS: NavSection[] = [
     title: 'Overview',
     items: [
       { label: 'Introduction & Core Concepts', href: '/docs', icon: BookOpen },
-      { label: 'Threat Model & Security', href: '/docs/security', badge: 'Critical', icon: Shield },
+      { label: 'Threat Model & Security', href: '/docs/security', icon: Shield },
     ],
   },
   {
     title: 'Getting Started',
     items: [
-      { label: 'Quick Start Guide', href: '/docs/quickstart', badge: '5 min', icon: Zap },
+      { label: 'Quick Start Guide', href: '/docs/quickstart', icon: Zap },
     ],
   },
   {
     title: 'Protocol Specification',
     items: [
-      { label: 'Binary Framing & Envelopes', href: '/docs/protocol', badge: 'Spec', icon: Cpu },
+      { label: 'Binary Framing & Envelopes', href: '/docs/protocol', icon: Cpu },
     ],
   },
   {
     title: 'API Reference',
     items: [
-      { label: 'SDK & Web Components API', href: '/docs/api', badge: 'v0.1', icon: Code2 },
+      { label: 'SDK & Web Components API', href: '/docs/api', icon: Code2 },
     ],
   },
 ];
@@ -78,15 +78,10 @@ export default function DocsSidebar({
         {onOpenSearch && (
           <button
             onClick={onOpenSearch}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 text-xs text-slate-400 hover:text-slate-200 transition-all shadow-inner group"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-900/90 hover:bg-dark-850 border border-dark-750 text-xs text-slate-400 hover:text-slate-200 transition-all shadow-inner group"
           >
-            <div className="flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-cyan transition-colors" />
-              <span>Search docs...</span>
-            </div>
-            <kbd className="px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-dark-800 border border-dark-700 rounded">
-              ⌘K
-            </kbd>
+            <Search className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-cyan transition-colors" />
+            <span>Search docs...</span>
           </button>
         )}
 
@@ -106,7 +101,7 @@ export default function DocsSidebar({
                       key={item.href}
                       href={item.href}
                       onClick={onClose}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      className={`flex items-center px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                         isActive
                           ? 'bg-brand-cyan/15 text-brand-cyan font-bold border border-brand-cyan/30 shadow-sm shadow-cyan-950/20'
                           : 'text-slate-400 hover:text-slate-200 hover:bg-dark-900/70 border border-transparent'
@@ -122,17 +117,6 @@ export default function DocsSidebar({
                         )}
                         <span className="truncate">{item.label}</span>
                       </div>
-                      {item.badge && (
-                        <span
-                          className={`text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.2 rounded-full border ${
-                            isActive
-                              ? 'bg-brand-cyan/20 border-brand-cyan/40 text-brand-cyan'
-                              : 'bg-dark-850 border-dark-700 text-slate-400'
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}

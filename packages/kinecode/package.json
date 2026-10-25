@@ -1,6 +1,6 @@
 {
   "name": "kinecode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Dynamic multi-frame animated QR code generator & scanner for anti-photo Proof-of-Presence",
   "type": "module",
   "main": "./dist/kinecode.umd.cjs",

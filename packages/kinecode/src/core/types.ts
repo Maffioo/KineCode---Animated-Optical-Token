@@ -131,4 +131,3 @@ export interface VerificationResult {
   rawPayload?: Uint8Array;
 }
 
-export type VisualSkinType = 'fluid-wave' | 'radial-equalizer' | 'sonar-ripple';

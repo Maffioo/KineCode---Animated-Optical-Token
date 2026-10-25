@@ -9,10 +9,12 @@ import DocsPagination from '@/components/docs/DocsPagination';
 import Callout from '@/components/docs/Callout';
 import CodeBlock from '@/components/docs/CodeBlock';
 import { Steps, Step } from '@/components/docs/Steps';
+import TokenBuilder from '@/components/docs/TokenBuilder';
 
 const TOC: TocItem[] = [
   { id: 'install', title: '1. Installation', level: 2 },
   { id: 'presenter', title: '2. Presenter Screen', level: 2 },
+  { id: 'builder', title: 'Interactive Token Builder', level: 3 },
   { id: 'scanner', title: '3. Attendee Scanner', level: 2 },
   { id: 'verification', title: '4. Server Verification', level: 2 },
   { id: 'verification-result', title: 'Verification Result Object', level: 3 },
@@ -75,7 +77,7 @@ export default function QuickstartPage() {
           {/* Step 2: Presenter */}
           <Step number={2} title="Presenter Screen (Auditorium / Projector)">
             <p className="text-sm text-slate-300">
-              Drop the custom Web Component <code>&lt;kine-code&gt;</code> into your presentation slide, lecture app, or teacher dashboard:
+              Drop the custom Web Component <code>&lt;kine-code&gt;</code> or React component into your presentation slide, lecture app, or presenter dashboard:
             </p>
 
             <CodeBlock
@@ -96,6 +98,20 @@ export default function QuickstartPage() {
             <Callout type="tip" title="Recommended Settings for Large Auditoriums">
               For large lecture halls or distant projections, use <code>frames=&quot;4&quot;</code> and <code>fps=&quot;4&quot;</code>. This gives high-contrast V1 QR modules that smartphone cameras can resolve quickly even from row 10+.
             </Callout>
+
+            {/* Interactive Builder */}
+            <div id="builder" className="pt-6 space-y-3 scroll-mt-24">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">Live Code Generator &amp; Component Builder</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-cyan/10 border border-brand-cyan/30 text-brand-cyan">
+                  Interactive
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Configure your cyclic parameters below, preview the animated optical token in real time, and copy code ready for HTML, React, Vanilla JS, or Vue.
+              </p>
+              <TokenBuilder />
+            </div>
           </Step>
 
           {/* Step 3: Scanner */}
@@ -202,7 +218,7 @@ export async function POST(request: Request) {
       </article>
 
       {/* Right Table of Contents */}
-      <div className="hidden xl:block w-64 shrink-0 py-10 pr-6 border-l border-dark-850 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
+      <div className="hidden xl:block w-72 shrink-0 py-10 pl-8 pr-6 border-l border-dark-850 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
         <DocsTableOfContents items={TOC} githubEditPath="quickstart/page.tsx" />
       </div>
     </div>
